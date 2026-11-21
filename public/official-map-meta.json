@@ -1,0 +1,41 @@
+{
+  "title": "Rockstar poster",
+  "image": "/official-map.jpg",
+  "width": 2805,
+  "height": 3840,
+  "attribution": "Official printable map of Leonida © Rockstar Games",
+  "source": "https://www.rockstargames.com/newswire/article/39akk424a9oo53/grand-theft-auto-vi-now-available",
+  "sourceImage": "https://www.rockstargames.com/VI/_next/static/media/Leonida_Map_Poster.08ir77j-.26ny.jpg",
+  "sha256": "689554e17d8ce324f8d7c1bf213355c668ed990dbca113864694af07f3b4cc2d",
+  "rights": "Free publisher download for local use. Rockstar retains its rights.",
+  "registration": {
+    "matrix": [
+      [
+        0.7314030550076761,
+        -5.7991579859857194e-05,
+        190.23255628862714
+      ],
+      [
+        6.413184581140782e-05,
+        0.7316038745315785,
+        147.23757856504955
+      ]
+    ],
+    "heldOut": {
+      "accepted": 183,
+      "candidates": 185,
+      "medianPixels": 0.413,
+      "p90Pixels": 1.107,
+      "maxPixels": 4.516,
+      "registeredInputBounds": [
+        179.58,
+        347.48,
+        3070.9,
+        4294.73
+      ]
+    },
+    "inputWidth": 3456,
+    "inputHeight": 4864,
+    "method": "Affine alignment to pinned GTADB Day"
+  }
+}

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#191a1c" />
+    <title>GTA 6 Loot Map by theihtishaam | Interactive Map &amp; Loot Tracker</title>
+    <meta name="description" content="Explore Leonida, track GTA 6 heists and collectibles, plan GPS routes, and check community bounty reports. An open-source interactive map by The Ihtisham." />
+    <meta name="author" content="The Ihtisham" />
+    <link rel="icon" href="/mark.svg" />
+    <link rel="stylesheet" href="/atlas.css" />
+    <link rel="stylesheet" href="/map-upgrade.css" />
+    <link rel="stylesheet" href="/dashboard.css" />
+    <link rel="stylesheet" href="/manual.css" />
+    <link rel="stylesheet" href="/themes.css" />
+  </head>
+  <body>
+    <header class="top">
+      <a href="#map" class="brand" aria-label="GTA 6 Loot Map by theihtishaam home"
+        ><img src="/mark.svg" alt="" /><span
+          >GTA 6 Loot Map<small>By theihtishaam</small></span
+        ></a
+      >
+      <nav aria-label="Main navigation">
+        <button data-view="map" class="active">
+          <i data-icon="map"></i>World map</button
+        ><button data-view="journal">
+          <i data-icon="book"></i>Field journal</button
+        ><button data-view="sources">
+          <i data-icon="signal"></i>Live sources
+        </button><button data-view="manual" title="Player manual">
+          <i data-icon="manual"></i>Player manual
+        </button>
+      </nav>
+      <button id="settings" class="header-settings">
+        <i data-icon="settings"></i><span>Settings</span>
+      </button>
+    </header>
+    <main id="world" class="world">
+      <aside id="index" aria-label="Map index">
+        <div class="sidebar-scroll">
+          <div class="index-title">
+            <div class="kicker"><span class="rule"></span> FIELD GUIDE</div>
+            <h1>Map index</h1>
+          </div>
+          <div class="search">
+            <i data-icon="search"></i
+            ><input
+              id="search"
+              placeholder="Find a location or reward"
+              type="search"
+              aria-label="Search places and activities"
+            /><kbd>/</kbd>
+          </div>
+          <div class="section-label">
+            <h2>Map layers</h2>
+            <button class="quiet" id="reset-filters">Reset</button>
+          </div>
+          <div id="categories" class="categories"></div>
+          <button class="watch-shortcut" id="open-watch" hidden><i data-icon="signal"></i>Open Bounty Watch <i data-icon="arrow"></i></button>
+          <label class="fieldlabel progress-filter" for="progress-filter"
+            >Checklist status</label
+          ><select id="progress-filter">
+            <option value="all">All entries</option>
+            <option value="remaining">Remaining</option>
+            <option value="done">Completed</option>
+          </select>
+          <details class="extra-filters">
+            <summary>Region &amp; map evidence</summary>
+            <label class="form-field"><span>Region</span><select id="region-filter"><option value="">All regions</option></select></label>
+            <label class="form-field"><span>Map evidence</span><select id="evidence-filter">
+              <option value="">All evidence</option><option value="mapped">Has a map pin</option><option value="pending">Awaiting a pin</option>
+              <option value="guide">Researched guides</option><option value="personal">My pins</option>
+            </select></label>
+            <label class="checkline"><input id="nearest-first" type="checkbox" disabled>Nearest to my position first</label>
+          </details>
+          <div class="section-label results-title">
+            <h2>Location index</h2>
+            <span class="mono" id="result-count"></span>
+          </div>
+          <div id="results"></div>
+          <button id="more" class="more" hidden>Show more entries</button>
+        </div>
+        <div class="side-footer">
+          <button id="open-journal">
+            <i data-icon="book"></i><span>My field journal</span
+            ><b id="done-count">0</b>
+          </button>
+        </div>
+      </aside>
+      <section
+        class="map-stage"
+        id="map-stage"
+        aria-label="Interactive Leonida map"
+      >
+        <div
+          id="map-surface"
+          tabindex="0"
+          role="region"
+          aria-label="Map. Arrow keys pan, plus and minus zoom. Use the location index to select a marker."
+        >
+          <div id="map-plane">
+            <img
+              id="map-img"
+              alt="Community cartography of Leonida"
+              draggable="false"
+            />
+          </div>
+          <svg id="route-overlay" aria-hidden="true"></svg>
+          <div id="pins"></div>
+        </div>
+        <div class="map-heading">
+          <div class="kicker">
+            <span class="live-dot"></span> COMMUNITY ATLAS
+          </div>
+          <h2>Leonida<span>.</span></h2>
+          <p id="map-summary">Loading map…</p>
+        </div>
+        <button id="mobile-index" class="float-button" aria-controls="index" aria-expanded="false">
+          <i data-icon="layers"></i>Map index
+        </button>
+        <div class="compass" title="North up">
+          <b>N</b><i data-icon="north"></i>
+        </div>
+        <div class="map-tools">
+          <button id="zoom-in" title="Zoom in" aria-label="Zoom in">
+            <i data-icon="plus"></i></button
+          ><button id="zoom-out" title="Zoom out" aria-label="Zoom out">
+            <i data-icon="minus"></i></button
+          ><button id="fit" title="Fit map" aria-label="Fit map">
+            <i data-icon="fit"></i>
+          </button>
+        </div>
+        <div class="map-bottom">
+          <button id="hero-position" class="float-button" title="Set or find your character’s position"><i data-icon="target"></i>My position</button>
+          <button id="route-tools" class="float-button">
+            <i data-icon="route"></i>Route planner</button
+          ><button
+            id="style-toggle"
+            class="float-button"
+            title="Switch map colors"
+          >
+            <i data-icon="layers"></i><span>Night map</span>
+          </button>
+        </div>
+        <div id="map-credit" class="attribution">
+          <span id="zoom-level">1×</span> · Map adapted from
+          <a href="https://map.gtadb.org" target="_blank" rel="noreferrer"
+            >GTADB &amp; contributors</a
+          >
+          ·
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            target="_blank"
+            rel="noreferrer"
+            >CC BY 4.0</a
+          >
+        </div>
+        <div id="instruction" class="instruction" hidden></div>
+        <article
+          id="inspector"
+          class="inspector"
+          hidden
+          aria-label="Selected entry"
+        ></article>
+      </section>
+    </main>
+    <main id="sheet" class="sheet" hidden><div id="sheet-content"></div></main>
+    <footer class="creator-footer">
+      <span>Built by <a href="https://github.com/theihtishaam" aria-label="The Ihtisham · @theihtishaam on GitHub" rel="noreferrer" target="_blank"><strong>The Ihtisham</strong> <span class="creator-handle">@theihtishaam</span></a> <small>· v0.1.0</small></span>
+      <nav class="creator-links" aria-label="Creator profiles and repository">
+        <a href="https://github.com/theihtishaam" target="_blank" rel="noreferrer">GitHub profile</a>
+        <a href="https://www.linkedin.com/in/ihtishamdeveloper/" target="_blank" rel="noreferrer">LinkedIn</a>
+        <a class="github-star" href="https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker" target="_blank" rel="noreferrer" title="Star GTA 6 Loot Map on GitHub"><i data-icon="collectible"></i>Star on GitHub</a>
+      </nav>
+    </footer>
+    <dialog id="dialog">
+      <div class="dialog-bar">
+        <h2 id="dialog-title"></h2>
+        <button id="dialog-close" class="icon-button" aria-label="Close dialog">
+          <i data-icon="x"></i>
+        </button>
+      </div>
+      <div id="dialog-body"></div>
+    </dialog>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+    <script type="module" src="/app.mjs"></script>
+  </body>
+</html>

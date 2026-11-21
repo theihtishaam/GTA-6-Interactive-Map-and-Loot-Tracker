@@ -1,0 +1,235 @@
+:root[data-ui-theme="vice"] {
+  --palette-edge: #ffa693;
+  --palette-signal: #80e6d5;
+  --palette-top: #261b25;
+  --palette-veil: #1a171f;
+  --palette-panel: #201a23;
+  --palette-mist: #342534;
+  --palette-line: #503944;
+}
+:root[data-ui-theme="ocean"] {
+  --palette-edge: #92e8ff;
+  --palette-signal: #9ff0c8;
+  --palette-top: #162a36;
+  --palette-veil: #111c27;
+  --palette-panel: #17252f;
+  --palette-mist: #213745;
+  --palette-line: #35515d;
+}
+:root[data-ui-theme="gold"] {
+  --palette-edge: #f7cf82;
+  --palette-signal: #cdc196;
+  --palette-top: #2b251b;
+  --palette-veil: #1c1b17;
+  --palette-panel: #25221c;
+  --palette-mist: #393225;
+  --palette-line: #544831;
+}
+:root[data-ui-theme] {
+  --amber: var(--palette-edge);
+  --mint: var(--palette-signal);
+  --bg: color-mix(in srgb, var(--palette-veil) 75%, #15191d);
+  --panel: var(--palette-panel);
+  --surface: var(--palette-mist);
+  --line: var(--palette-line);
+  --ink: #f8f4f1;
+  --soft: #d2d0d2;
+  --marker-glow: 35%;
+  --marker-halo: 9px;
+  --selected-glow: 49%;
+  --selected-radius: 17px;
+}
+:root[data-ui-glow="vivid"] {
+  --marker-glow: 70%;
+  --marker-halo: 14px;
+  --selected-glow: 74%;
+  --selected-radius: 23px;
+}
+
+[data-ui-theme] .top {
+  background: linear-gradient(100deg, var(--palette-top), var(--palette-veil) 65%, var(--palette-panel));
+}
+[data-ui-theme] .top nav button.active {
+  background: linear-gradient(0deg, color-mix(in srgb, var(--palette-edge) 12%, transparent), transparent 78%);
+}
+[data-ui-theme] .top nav button.active::after {
+  box-shadow: 0 -1px 7px color-mix(in srgb, var(--palette-edge) 63%, transparent);
+}
+[data-ui-theme] .top nav button:hover,
+[data-ui-theme] .top .header-settings:hover {
+  background-color: color-mix(in srgb, var(--palette-edge) 11%, var(--palette-top));
+}
+[data-ui-theme] #index {
+  background: linear-gradient(160deg, var(--palette-panel), var(--palette-veil) 75%);
+}
+[data-ui-theme] :is(.cat-btn, .layer-scope button)[aria-pressed="true"] {
+  color: var(--palette-edge);
+  border-color: color-mix(in srgb, var(--palette-edge) 75%, var(--palette-line));
+  background: color-mix(in srgb, var(--palette-edge) 10%, var(--palette-panel));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--palette-edge) 13%, transparent);
+}
+[data-ui-theme] .primary {
+  color: #182127;
+  background: var(--palette-edge);
+  border-color: var(--palette-edge);
+}
+[data-ui-theme] .primary:hover {
+  background: color-mix(in srgb, var(--palette-edge) 80%, white);
+}
+[data-ui-theme] .map-heading {
+  border-left-color: var(--palette-edge);
+  background: linear-gradient(105deg, var(--palette-veil), color-mix(in srgb, var(--palette-top) 91%, transparent) 72%, transparent);
+}
+[data-ui-theme] .map-heading h2 span {
+  text-shadow: 0 0 8px color-mix(in srgb, var(--palette-edge) 68%, transparent);
+}
+[data-ui-theme] .live-dot {
+  box-shadow: 0 0 7px color-mix(in srgb, var(--palette-edge) 72%, transparent);
+}
+[data-ui-theme] .compass {
+  color: var(--palette-signal);
+  text-shadow: 0 1px 4px #0b1318, 0 0 6px color-mix(in srgb, var(--palette-signal) 46%, transparent);
+  isolation: isolate;
+}
+[data-ui-theme] .compass::before {
+  content: "";
+  position: absolute;
+  inset: -4px -3px -5px;
+  z-index: -1;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--palette-panel) 88%, transparent);
+}
+[data-ui-theme] .compass .icon {
+  filter: drop-shadow(0 1px 2px #0b1318) drop-shadow(0 0 4px color-mix(in srgb, var(--palette-signal) 58%, transparent));
+}
+[data-ui-theme] .map-tools,
+[data-ui-theme] .map-bottom .float-button,
+[data-ui-theme] .atlas-map-popover {
+  background: var(--palette-panel);
+  border-color: var(--palette-line);
+}
+[data-ui-theme] #map-stage .map-tools button#map-key-toggle[aria-expanded="true"],
+[data-ui-theme] .map-tools button:hover,
+[data-ui-theme] .map-bottom .float-button:hover {
+  color: var(--palette-edge);
+  background: color-mix(in srgb, var(--palette-edge) 14%, var(--palette-panel));
+}
+[data-ui-glow="vivid"] #map-stage:not(.filtered) #pins .pin:not(.selected, .cluster) .pin-glyph::before {
+  box-shadow: 0 0 0 2px #102027,
+    0 0 10px 1px color-mix(in srgb, var(--cat) 57%, transparent);
+}
+[data-ui-theme] #map-stage.filtered #pins .pin:not(.selected) .pin-glyph::before {
+  box-shadow: 0 0 0 2px #102027, 0 0 0 4px color-mix(in srgb, var(--cat) 22%, transparent),
+    0 0 var(--marker-halo) 2px color-mix(in srgb, var(--cat) var(--marker-glow), transparent);
+}
+[data-ui-theme] #map-stage #pins .pin.selected .pin-glyph::before {
+  box-shadow: 0 0 0 2px #10171d, 0 0 0 5px color-mix(in srgb, var(--cat) 44%, transparent),
+    0 0 0 7px color-mix(in srgb, var(--palette-edge) 43%, transparent),
+    0 0 var(--selected-radius) 5px color-mix(in srgb, var(--cat) var(--selected-glow), transparent);
+}
+[data-ui-theme] #map-stage #pins .pin[aria-expanded="true"] .pin-glyph::before {
+  box-shadow: 0 0 0 2px #102027, 0 0 0 4px color-mix(in srgb, var(--palette-signal) 58%, transparent);
+}
+
+.theme-settings {
+  display: grid;
+  gap: 12px;
+  margin-block: 10px 18px;
+}
+.theme-settings fieldset {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.theme-settings legend {
+  color: var(--ink);
+  font-weight: 700;
+  padding: 0 0 8px;
+}
+.theme-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.theme-choice {
+  position: relative;
+  min-width: 0;
+  padding: 7px;
+  font-size: 0.81rem;
+  font-weight: 650;
+  display: grid;
+  gap: 5px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.theme-choice:has(input:checked) {
+  border-color: var(--palette-edge);
+  background: color-mix(in srgb, var(--palette-edge) 8%, var(--palette-panel));
+}
+.theme-choice:has(input:focus-visible) {
+  outline: 2px solid var(--palette-edge);
+  outline-offset: 2px;
+}
+.theme-choice input {
+  position: absolute;
+  inset: 6px 6px auto auto;
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--palette-edge);
+}
+.theme-preview {
+  min-height: 29px;
+  padding-inline: 8px 24px;
+  border-radius: 4px;
+  background: var(--sample-bg);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.theme-preview :is(b, i) {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.theme-preview b {
+  background: var(--sample-accent);
+  box-shadow: 0 0 7px var(--sample-accent);
+}
+.theme-preview i {
+  background: var(--sample-signal);
+}
+.theme-glow-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.theme-glow-control select {
+  min-height: 40px;
+  padding: 6px 22px 6px 9px;
+}
+@media (pointer: coarse) {
+  .theme-glow-control select {
+    min-height: 44px;
+  }
+}
+@media (max-width: 350px) {
+  .theme-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-ui-theme] #map-stage #pins .pin-glyph::before,
+  [data-ui-theme] .top nav button,
+  [data-ui-theme] .theme-choice {
+    transition: none;
+  }
+}

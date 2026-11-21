@@ -1,0 +1,426 @@
+/* The target stays larger than the glyph so busy maps remain readable. */
+#pins .pin {
+  --target: 36px;
+  --glyph: 25px;
+  --marker-ink: var(--cat);
+  --marker-surface: #172127;
+  --marker-outline: #0a1115;
+  z-index: 2;
+  width: var(--target);
+  height: var(--target);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--marker-ink);
+  background: none;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+}
+
+#pins .pin.place {
+  --glyph: 18px;
+  z-index: 1;
+}
+
+#pins .pin.cluster {
+  --glyph: 29px;
+  --marker-ink: #fcdfa0;
+  --marker-surface: #2b261a;
+}
+
+#pins .pin.cluster.place {
+  --glyph: 27px;
+  --marker-ink: #b7eeee;
+  --marker-surface: #142b31;
+}
+
+#pins .pin.selected {
+  --target: 44px;
+  --glyph: 32px;
+  --marker-ink: #141c21;
+  --marker-surface: var(--cat);
+  z-index: 5;
+}
+
+#pins .pin:hover,
+#pins .pin:focus-visible,
+#pins .pin[aria-expanded="true"] {
+  z-index: 6;
+}
+
+#pins .pin:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 1px;
+}
+
+#pins .pin-glyph,
+.legend-glyph {
+  display: grid;
+  place-items: center;
+  position: relative;
+  isolation: isolate;
+  width: var(--glyph, 22px);
+  height: var(--glyph, 22px);
+  color: var(--marker-ink, var(--cat));
+  font: 750 11px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+#pins .pin-glyph::before,
+.legend-glyph::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border: 1px solid var(--cat);
+  border-radius: 50%;
+  background: var(--marker-surface, #172127);
+  box-shadow: 0 0 0 2px var(--marker-outline, #0a1115),
+    0 0 7px color-mix(in srgb, var(--cat) 56%, transparent);
+  transition: box-shadow 150ms ease-out, border-color 150ms ease-out;
+}
+
+#pins .pin-glyph .icon,
+.legend-glyph .icon {
+  width: 59%;
+  height: 59%;
+  stroke-width: 2;
+}
+
+#pins .pin[data-kind="heist"]:not(.cluster) .pin-glyph::before,
+.legend-glyph[data-kind="heist"]::before {
+  border-radius: 5px;
+}
+
+#pins .pin[data-kind="reward"]:not(.cluster) .pin-glyph::before,
+.legend-glyph[data-kind="reward"]::before {
+  inset: 2px;
+  border-radius: 5px;
+  transform: rotate(45deg);
+}
+
+#pins .pin[data-kind="collectible"]:not(.cluster) .pin-glyph::before,
+.legend-glyph[data-kind="collectible"]::before {
+  border-radius: 48% 48% 29% 29%;
+}
+
+#pins .pin[data-kind="earbuds"]:not(.cluster) .pin-glyph::before,
+.legend-glyph[data-kind="earbuds"]::before {
+  inset-inline: -2px;
+  border-radius: 999px;
+}
+
+#pins .pin[data-kind="gloves"]:not(.cluster) .pin-glyph::before,
+.legend-glyph[data-kind="gloves"]::before {
+  border-radius: 8px 8px 8px 3px;
+}
+
+#pins .pin[data-kind="bag"]:not(.cluster) .pin-glyph::before,
+.legend-glyph[data-kind="bag"]::before {
+  border-radius: 8px 8px 4px 4px;
+}
+
+#pins .pin.cluster .pin-glyph::before {
+  border: 1px dashed currentColor;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px #101c22, 0 0 6px #0b151c99;
+}
+
+#pins .pin.cluster.place .pin-glyph::before {
+  border-radius: 50%;
+}
+
+#map-stage.filtered #pins .pin:not(.selected) .pin-glyph::before {
+  box-shadow: 0 0 0 2px #101c22,
+    0 0 10px 2px color-mix(in srgb, var(--cat) 58%, transparent);
+}
+
+#pins .pin.selected .pin-glyph::before,
+#pins .pin.selected:hover .pin-glyph::before {
+  border-color: white;
+  border-width: 2px;
+  box-shadow: 0 0 0 2px #111a20, 0 0 0 6px color-mix(in srgb, var(--cat) 36%, transparent),
+    0 0 17px 5px color-mix(in srgb, var(--cat) 46%, transparent);
+}
+
+#pins .pin:hover .pin-glyph::before,
+#pins .pin[aria-expanded="true"] .pin-glyph::before {
+  border-color: white;
+}
+
+#pins .pin-done,
+.map-key-done {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  color: #11261d;
+  background: #b6f5bf;
+  border: 1px solid #142c25;
+  border-radius: 50%;
+}
+
+#pins .pin-done {
+  position: absolute;
+  left: calc(50% + var(--glyph) / 2 - 8px);
+  top: calc(50% + var(--glyph) / 2 - 8px);
+}
+
+#pins .pin .pin-done .icon,
+.map-key-done .icon {
+  width: 10px;
+  height: 10px;
+  stroke-width: 2.4;
+}
+
+#pins .pin-label {
+  display: none;
+  bottom: calc(50% + var(--glyph) / 2 + 7px);
+  width: max-content;
+  max-width: min(212px, 66vw);
+  overflow-wrap: anywhere;
+  font: 650 0.79rem/1.25 var(--body);
+  color: #f5f8f6;
+  background: #101b22;
+  border: 1px solid color-mix(in srgb, var(--cat) 60%, #34434d);
+  padding: 5px 8px;
+}
+
+#pins .pin.selected .pin-label,
+#pins .pin:focus-visible .pin-label {
+  display: block;
+}
+
+@media (hover: hover) {
+  #pins .pin:hover .pin-label {
+    display: block;
+  }
+}
+
+#pins .pin[aria-expanded="true"] .pin-label {
+  display: none;
+}
+
+#pins .pin.label-below .pin-label {
+  top: calc(50% + var(--glyph) / 2 + 7px);
+  bottom: auto;
+}
+
+#pins .pin.label-right .pin-label {
+  left: calc(50% - 11px);
+  transform: none;
+}
+
+#pins .pin.label-left .pin-label {
+  right: calc(50% - 11px);
+  left: auto;
+  transform: none;
+}
+
+#map-stage.large-markers #pins .pin {
+  --target: 48px;
+  --glyph: 32px;
+}
+
+#map-stage.large-markers #pins .pin.place:not(.selected) {
+  --glyph: 24px;
+}
+
+#map-stage.large-markers #pins .pin.selected {
+  --target: 52px;
+  --glyph: 38px;
+}
+
+#map-stage.large-markers #pins .pin-label {
+  font-size: 0.9rem;
+}
+
+#map-stage[data-style="contrast"] #pins .pin-glyph::before,
+#map-stage[data-style="contrast"] .legend-glyph::before {
+  border-color: #fff;
+  border-width: 2px;
+  --marker-outline: #000;
+}
+
+#map-stage .map-tools button#map-key-toggle[aria-expanded="true"] {
+  color: var(--amber);
+  background: #3a3020;
+}
+
+#map-stage .map-tools button:focus-visible {
+  outline-offset: -3px;
+}
+
+.atlas-map-popover {
+  position: absolute;
+  z-index: 8;
+  width: min(272px, calc(100% - 18px));
+  color: #f6f8f7;
+  background: #18242b;
+  border: 1px solid #60747e;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 8px #091014b3;
+}
+
+.atlas-map-popover header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.atlas-map-popover h3 {
+  margin: 0;
+  font: 700 0.97rem/1.2 var(--body);
+}
+
+.atlas-map-popover header button {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.atlas-map-popover button:focus-visible {
+  outline: 2px solid #f9dda0;
+  outline-offset: 2px;
+}
+
+.map-key-panel {
+  top: 87px;
+  right: 62px;
+  max-height: calc(100% - 110px);
+  overflow: auto;
+}
+
+.map-key-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px 8px;
+  padding: 10px 0;
+  margin: 0;
+  list-style: none;
+}
+
+.map-key-list li,
+.map-key-states span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.75rem;
+}
+
+.map-key-states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 11px;
+  padding-block: 9px;
+  margin: 0;
+  border-block: 1px solid #465760;
+}
+
+.map-key-states b {
+  display: grid;
+  place-items: center;
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+}
+
+.map-key-selected {
+  background: #f4cf72;
+  border: 1px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #f4cf7277;
+}
+
+.map-key-count {
+  border: 1px dashed #fcdfa0;
+  border-radius: 4px;
+  font: 700 10px/1 var(--mono);
+}
+
+.map-key-size {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 39px;
+  font-size: 0.84rem;
+}
+
+.map-key-size input {
+  accent-color: #f4cf72;
+}
+
+.atlas-map-popover .map-key-fit,
+.map-group-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+}
+
+.map-key-fit .icon,
+.map-group-actions .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.map-group-panel p {
+  margin: 5px 0 11px;
+  font-size: 0.82rem;
+  color: #dbe6e9;
+}
+
+.map-group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+@media (max-width: 760px) {
+  .map-key-panel {
+    top: 73px;
+    right: 54px;
+  }
+}
+
+@media (pointer: coarse) {
+  #pins .pin {
+    --target: 44px;
+  }
+
+  #map-stage .map-tools button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .map-key-panel {
+    right: 62px;
+  }
+
+  .atlas-map-popover header button {
+    flex-basis: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .atlas-map-popover .map-key-fit,
+  .map-group-actions button,
+  .map-key-size {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #pins .pin-glyph::before,
+  .legend-glyph::before {
+    transition: none;
+  }
+}

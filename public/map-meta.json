@@ -1,0 +1,31 @@
+{
+  "image": "/map.webp",
+  "width": 3456,
+  "height": 4864,
+  "revision": "d406fea099e1df2bce42fd6b87eed04bce646629",
+  "source": "https://github.com/rolux/gtadb.org/tree/d406fea099e1df2bce42fd6b87eed04bce646629",
+  "attribution": "YANIS and the GTA VI Mapping Community · gtadb.org and all contributors",
+  "license": "CC BY 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "tileSet": "yanis,18",
+  "tileLevel": 3,
+  "landmarkCount": 3663,
+  "sourceLandmarkCount": 3754,
+  "coordinateFrame": {
+    "name": "GTADB GTA VI planar game frame",
+    "pixelOrigin": "top-left",
+    "normalizedX": "east",
+    "normalizedY": "south",
+    "cropPixels": [
+      1536,
+      1472,
+      4992,
+      6336
+    ],
+    "minX": -10240,
+    "maxX": 3584,
+    "minY": -8960,
+    "maxY": 10496,
+    "gameUnitsPerPixel": 4
+  }
+}

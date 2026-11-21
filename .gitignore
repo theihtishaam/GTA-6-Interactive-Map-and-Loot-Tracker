@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.atlas/
+.cache/
+.state/
+.venv/
+node_modules/
+test-results/
+.gtadb-import/
+release/

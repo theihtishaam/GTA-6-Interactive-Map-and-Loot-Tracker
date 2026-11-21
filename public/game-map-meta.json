@@ -1,0 +1,41 @@
+{
+  "title": "In-game map",
+  "image": "/game-map.png",
+  "width": 2676,
+  "height": 3446,
+  "attribution": "Grand Theft Auto VI map © Rockstar Games · in-game map published by PowerPyx",
+  "source": "https://www.powerpyx.com/gta-6-full-world-map-revealed/",
+  "sourceImage": "https://www.powerpyx.com/wp-content/uploads/gta-6-full-world-map.png",
+  "sha256": "9c31e4ae4af0536a1e6fef3599754e1d2eefcfdf88f3d32093b7958424c85561",
+  "rights": "Local-only copy. Rockstar and PowerPyx retain their respective rights.",
+  "registration": {
+    "matrix": [
+      [
+        0.7097345773363899,
+        0.00026324456013863555,
+        165.57756379923512
+      ],
+      [
+        1.4395708992738496e-05,
+        0.7102766229871849,
+        62.96637061721254
+      ]
+    ],
+    "heldOut": {
+      "accepted": 115,
+      "candidates": 126,
+      "medianPixels": 0.933,
+      "p90Pixels": 2.263,
+      "maxPixels": 4.554,
+      "registeredInputBounds": [
+        171.67,
+        330.42,
+        2991.82,
+        4354.9
+      ]
+    },
+    "inputWidth": 3456,
+    "inputHeight": 4864,
+    "method": "Affine alignment to pinned GTADB Day"
+  }
+}
