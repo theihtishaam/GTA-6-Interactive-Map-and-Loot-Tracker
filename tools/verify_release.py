@@ -71,9 +71,11 @@ def main():
         assert {label: target for label, _, target in badges} == {
             "Total npm downloads": "https://npm-stat.com/charts.html?package=gta6-loot-map&from=2026-11-21",
             "GitHub profile of @theihtishaam": "https://github.com/theihtishaam",
-            "GTA 6 – Leonida": "https://www.rockstargames.com/VI/",
         }
-        artwork = [image for image in images if image not in {url for _, url, _ in badges}]
+        game_badge = "https://img.shields.io/badge/GTA%206-Leonida-d45485?labelColor=292042"
+        assert f"![GTA 6 – Leonida]({game_badge})" in readme.splitlines()
+        badge_urls = {url for _, url, _ in badges} | {game_badge}
+        artwork = [image for image in images if image not in badge_urls]
         assert len(artwork) >= 8
         for image in artwork:
             assert image.startswith(image_root + "docs/"), image
