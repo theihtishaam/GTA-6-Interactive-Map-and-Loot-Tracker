@@ -1,5 +1,6 @@
 """Bounded anonymous discovery from public APIs and syndication feeds."""
 
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -16,7 +17,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 from xml.etree import ElementTree
 
-USER_AGENT = "GTA6MapLoot/0.1.0 (https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker)"
+USER_AGENT = "GTA6MapLoot/0.1.1 (https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker)"
 LAUNCH = datetime(2026, 11, 19, tzinfo=timezone.utc)
 REVIEW_EMBARGO = LAUNCH.replace(day=18)
 LIMIT = 35
@@ -25,7 +26,8 @@ OLDER_GAME = re.compile(r"\b(?:gta online|gta\s*(?:5|v|iv)|vice city stories)\b"
 NOISE = re.compile(
     r"\b(?:rumou?r\w*|wish\s*list|speculat\w*|fan concept|leak\w*|release date|how to download|"
     r"pc port|cracks?|giveaways?|spoiler policy|patch notes|pre[ -]?order|pre[ -]?load|"
-    r"cheats?|datamin\w*|deal(?:s)?|collector['’]s (?:box|edition)|discount(?:s)?)\b",
+    r"cheats?|datamin\w*|deal(?:s)?|collector['’]s (?:box|edition)|discount(?:s)?|"
+    r"release times?|review bombing|game awards|bug bount(?:y|ies))\b",
     re.I,
 )
 CATEGORIES = [
@@ -37,7 +39,8 @@ CATEGORIES = [
               r"smash\s*['’]?n['’]?\s*grabs?|jewel(?:l)?ery jobs?"),
     ("collectible", r"collect[ia]bles?|easter eggs?|hidden packages?|flusher tags?|"
                     r"collectible cards?|secret playlists?|treasure (?:dives?|shipwrecks?)|waink scans?"),
-    ("reward", r"rewards?|loot|unlocks?|secret stash(?:es)?|all equipment|style rewards?"),
+    ("reward", r"rewards?|loot|unlocks?|secret (?:cash )?stash(?:es)?|hidden (?:cash|money)|"
+               r"all equipment|style rewards?|open the safe|free (?:early-game )?weapons?"),
     ("landmark", r"points? of interest|landmarks?"),
 ]
 CATEGORIES = [(name, re.compile(r"\b(?:" + words + r")\b", re.I)) for name, words in CATEGORIES]
@@ -53,6 +56,39 @@ LOCATION_ACTION = re.compile(
     r"location|venue)\b",
     re.I,
 )
+MISSION_HEADLINE = re.compile(r"\bwalkthrough\b|\bhow to (?:complete|finish|start)\b", re.I)
+MISSION_BODY = re.compile(
+    r"\b(?:main (?:story )?mission|optional mission|side mission|main quest|side quest|"
+    r"chapter\s+[1-9]\s+(?:mission|job)|(?:this|the|your) mission)\b|\bstarting location\s*:",
+    re.I,
+)
+MISSION_TASK = re.compile(
+    r"\b(?:bring|choose|collect|complete|escape|find|finish|follow|get|head|help|"
+    r"look for|meet|pick up|reach|return|start|take|visit|walk|wait)\b",
+    re.I,
+)
+MISSION_ROUNDUP = re.compile(
+    r"\b(?:full (?:story )?walkthrough|all (?:\d+ )?(?:main |story |side )?(?:missions|guides|quests)|"
+    r"(?:mission|quest) list|story (?:mode guide|walkthrough)|missions and walkthroughs|"
+    r"every (?:main |story |side )?(?:mission|quest)|(?:both|two|three) (?:chapter\s+\d+\s+)?"
+    r"(?:missions|quests)|chapters? explained|how long)\b|"
+    r"100%\s+completion (?:checklist|guide)",
+    re.I,
+)
+NON_MISSION_WALKTHROUGH = re.compile(
+    r"\b(?:collectibles? and secrets|collectibles?\s*&\s*secrets|collectible locations|"
+    r"card (?:sets?|locations?)|review|tips and tricks|inventory|gear guide|farming)\b", re.I,
+)
+START_FIELD = re.compile(
+    r"\bstarting location:\s*(.{1,110}?)(?=\s+(?:chapter|quest giver|requirement|"
+    r"can be started by|reward|quest description|objectives)\s*:|[.;]|$)",
+    re.I,
+)
+START_STATEMENT = re.compile(r"\bstart(?:s|ing)?\s+(?:at|inside|in|near)\s+[^.!?]{2,100}", re.I)
+CHAPTER = re.compile(r"\bchapter\s*:\s*(?:chapter\s*)?([1-9])\b|\bchapter\s+([1-9])\s+mission\b", re.I)
+CHARACTER = re.compile(r"\bcan be started by:\s*(Jason(?:\s*/\s*Lucia)?|Lucia(?:\s*/\s*Jason)?)\b", re.I)
+PREREQUISITE = re.compile(r"\brequirements?:\s*(.{1,160}?)(?=\s+(?:can be started by|reward|quest description|"
+                          r"objectives|starting location)\s*:|$)", re.I)
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -101,11 +137,13 @@ class Source:
     game_specific: bool = False
     launch_guides: bool = False
     feed_urls: tuple[str, ...] = ()
+    coverage: str = ""
 
     def health(self):
         return {
             "id": self.id, "name": self.name, "url": self.url, "status": "pending",
             "checkedAt": None, "seen": 0, "matched": 0, "error": None,
+            "coverage": self.coverage, "byCategory": {},
         }
 
 
@@ -130,6 +168,14 @@ SOURCES = (
                "Bank Vault", "Collectible Card", "Electronics Stores", "All Equipment",
            ))),
     Source("pcgamer", "PC Gamer RSS", "https://www.pcgamer.com/feeds.xml", launch_guides=True),
+    Source("powerpyx-missions", "PowerPyx mission walkthroughs", powerpyx_feed("Walkthrough"), launch_guides=True,
+           coverage="Search feed for GTA 6 walkthroughs. Named mission starts are used where the feed provides them."),
+    Source("gtaboom", "GTA BOOM guides", "https://www.gtaboom.com/feed.xml", launch_guides=True,
+           coverage="Publisher RSS for mission walkthroughs, collectibles and other leads."),
+    Source("pushsquare", "Push Square guides", "https://www.pushsquare.com/feeds/guides", launch_guides=True,
+           coverage="Published PlayStation guides, screened for GTA VI gameplay."),
+    Source("collectibles-map", "GTA6 Collectibles Map articles", "https://gta6collectiblesmap.com/feed.xml",
+           game_specific=True, coverage="Specialist collectible and reward articles. Broad and derivative coverage stays a lead."),
 )
 
 
@@ -284,6 +330,58 @@ def submitted_grid(excerpt):
     return None
 
 
+def mission_name(title):
+    part = re.search(r"\bwalkthrough\s*\(\s*part\s+\d+\s+of\s+\d+\s*\)\s*:\s*(.+)$", title, re.I)
+    if part:
+        return part[1].strip()
+    name = re.sub(r"^\s*(?:guide\s*:\s*)?(?:GTA\s*(?:6|VI)|Grand Theft Auto VI)\s*[:–—-]?\s*", "", title, flags=re.I)
+    name = re.split(r"\bwalkthrough\b", name, maxsplit=1, flags=re.I)[0].strip(" :–—-")
+    name = re.sub(r"^how to (?:complete|finish|start)\s+|\s+in GTA\s*(?:6|VI)$", "", name, flags=re.I)
+    return name.strip(" :–—-") if len(name.strip()) >= 3 else ""
+
+
+def individual_mission(source, title, excerpt, url):
+    if (not MISSION_HEADLINE.search(title) or MISSION_ROUNDUP.search(title)
+            or MISSION_ROUNDUP.search(excerpt[:180]) and re.search(r"\b(?:both|two|three)\b", excerpt[:100], re.I)
+            or NON_MISSION_WALKTHROUGH.search(title) or not mission_name(title)
+            or len(excerpt) < 45):
+        return False
+    if MISSION_BODY.search(excerpt) and MISSION_TASK.search(excerpt):
+        return True
+    # This publisher puts the mission format in the canonical article slug
+    # while supplying a short, objective-focused description in its feed.
+    parsed = urlsplit(url)
+    return (source.id == "gtaboom" and parsed.hostname == "www.gtaboom.com"
+            and bool(re.fullmatch(r"/gta-6-[a-z0-9-]+-walkthrough-[a-f0-9]{4}/?", parsed.path))
+            and bool(MISSION_TASK.search(excerpt)))
+
+
+def mission_context(title, excerpt, landmarks):
+    fields = {"missionName": mission_name(title)}
+    chapter = CHAPTER.search(excerpt)
+    character = CHARACTER.search(excerpt)
+    prereq = PREREQUISITE.search(excerpt)
+    if chapter:
+        fields["chapter"] = int(chapter[1] or chapter[2])
+    if character:
+        fields["character"] = character[1]
+    if prereq:
+        fields["prerequisite"] = prereq[1].strip()[:145]
+    start = START_FIELD.search(excerpt)
+    if start:
+        label = start[1].strip()
+        fields["startingLocation"] = label
+        # Region names and route destinations in objectives must not be picked as the starting venue.
+        venue = label.rsplit(">", 1)[-1].strip()
+        matches = [place for place in landmarks if place.get("nameOrigin", "game") == "game"
+                   and place.get("type") not in ("natural", "region", "district")
+                   and normalize_venue(place["title"]).casefold() == normalize_venue(venue).casefold()]
+        return fields, matches[0] if len(matches) == 1 else None
+    statement = START_STATEMENT.search(excerpt)
+    place = source_venue("", statement[0], landmarks) if statement else None
+    return fields, place
+
+
 def make_report(source, item, landmarks):
     title, excerpt, url, published, reactions = item
     title = plain(title)[:180]
@@ -300,22 +398,36 @@ def make_report(source, item, landmarks):
             or re.search(r"\b(?:could|might|will)\b.*\?", title, re.I)
             or not (source.game_specific or GAME.search(combined))):
         return None
-    # The title itself has to identify a discovery topic to avoid incidental keyword mentions.
-    category = next((name for name, pattern in CATEGORIES if pattern.search(title)), None)
-    if not category or not ACTION.search(combined):
+    # Generic mission indexes stay on the publisher's site rather than becoming individual activities.
+    if MISSION_ROUNDUP.search(title):
+        return None
+    mission = individual_mission(source, title, excerpt, url)
+    category = "mission" if mission else next((name for name, pattern in CATEGORIES if pattern.search(title)), None)
+    if not category or (not mission and not ACTION.search(combined)):
         return None
     # Multi-location guides stay searchable as leads instead of representing the guide with one arbitrary pin.
-    multi_venue = re.search(r"\b(?:all|every|each)\b.*\b(?:locations?|stores?|vaults?|sets?)\b", title, re.I)
-    place = None if multi_venue else source_venue(title, excerpt, landmarks)
+    multi_venue = re.search(
+        r"\b(?:all|every|each)\b.*\b(?:locations?|stores?|vaults?|sets?|collectibles?)\b|"
+        r"\b(?:[2-9]|[1-9]\d+|two|three|four|five|six|seven|eight|nine|ten)\s+(?:early\s+)?"
+        r"(?:pickups?|stashes|positions?|locations?)\b", title, re.I,
+    )
+    mission_fields, place = mission_context(title, excerpt, landmarks) if mission else (
+        {}, None if multi_venue else source_venue(title, excerpt, landmarks)
+    )
     report = {
         "id": sha256(url.encode()).hexdigest()[:24],
-        "title": title, "category": category, "region": place["region"] if place else "Unresolved",
+        "title": title, "category": category,
+        "region": place["region"] if place else mission_fields.get("startingLocation", "Unresolved"),
         "x": place["x"] if place else None, "y": place["y"] if place else None,
         "source": url, "sourceName": source.name, "details": excerpt[:160],
         "steps": [], "confidence": "area" if place else "lead",
         "publishedAt": published.isoformat(), "landmarkId": place["id"] if place else None,
-        "_extract": excerpt, "sourceDigest": sha256(excerpt.encode()).hexdigest(),
+        "_extract": excerpt, "sourceDigest": sha256(excerpt.encode()).hexdigest(), **mission_fields,
     }
+    if mission and place:
+        report["evidenceNote"] = "The guide names this starting venue. The exact mission prompt may be nearby."
+    if place and place.get("source"):
+        report["locationSource"] = place["source"]
     grid = submitted_grid(excerpt) if source.kind == "github" and not multi_venue else None
     if grid:
         report.update(x=grid[0],y=grid[1],confidence="reported",landmarkId=None,
@@ -337,12 +449,19 @@ def read_source(source, landmarks, fetcher):
             items, issue = read_guide_feeds(source, fetcher)
         else:
             items = parse_feed(fetcher(source.url, timeout=8), publisher_guides=source.launch_guides)
-        reports = [report for item in items if (report := make_report(source, item, landmarks))]
+        reports = {}
+        for item in items:
+            report = make_report(source, item, landmarks)
+            if report:
+                prior = reports.get(report["id"])
+                if prior is None or report["publishedAt"] > prior["publishedAt"]:
+                    reports[report["id"]] = report
     except (OSError, ValueError, KeyError, TypeError, ElementTree.ParseError) as exc:
         health.update(status="error", error=failure_message(exc))
         return health, []
-    health.update(status="error" if issue else "ok", seen=len(items), matched=len(reports), error=issue)
-    return health, reports
+    health.update(status="error" if issue else "ok", seen=len(items), matched=len(reports), error=issue,
+                  byCategory=dict(Counter(row["category"] for row in reports.values())))
+    return health, list(reports.values())
 
 
 def read_guide_feeds(source, fetcher):
@@ -364,7 +483,11 @@ def discover(landmarks, fetcher=fetch):
     with ThreadPoolExecutor(max_workers=len(SOURCES)) as pool:
         futures = [pool.submit(read_source, source, landmarks, fetcher) for source in SOURCES]
         collected = [future.result() for future in futures]
-    return [result[0] for result in collected], [report for _, reports in collected for report in reports]
+    unique = {}
+    for _, reports in collected:
+        for report in reports:
+            unique.setdefault(report["id"], report)
+    return [result[0] for result in collected], list(unique.values())
 
 
 def load_landmarks(path):

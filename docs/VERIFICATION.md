@@ -1,5 +1,18 @@
 # Verification — November 21, 2026
 
+## Version 0.1.1
+
+The main Python suite passed 82 tests. Separate checks covered five guide-integrity cases, 17 Node tests for the mission catalogue, goals and portable runtime, and browser walkthroughs on desktop and mobile.
+
+| Area | What was exercised |
+| --- | --- |
+| Missions | 176 distinct checklist entries cover the audited reference index. Of these, 170 have actionable published guidance and six have reference notes. The bundled dashboard offers 88 routable starts, including 82 mission markers registered from published map screenshots. The remainder use source text, in-game triggers or a reference link. [Catalogue audit](MISSIONS.md) · [Marker registration](ACTIVITY-PINS.md) |
+| Discovery | A live publisher scan accepted 41 distinct URLs, including 23 individual mission articles. The separate mission-index reader checked 142 direct walkthrough links. In the local dashboard run, 17 of 20 general sources responded and six of seven automatic bounty sources responded. The persisted cache held 42 general reports and zero qualifying bounties. [Research and update plan](QUALITY-AND-DISCOVERY.md) |
+| Player workflows | Clean desktop and mobile sessions exercised choosing a mission and its prerequisite, ticking objectives, marking and undoing completion, restoring the build in a different browser, voting and creating an editable GitHub draft. A scheduled test-source update added a pin. An explicit retraction removed the pin and linked route. |
+| GPS | Browser checks exercised character placement, distance, nearest-first ordering across missions and activities, connected and disconnected routes, source image caching, optional local screenshot matching and a local position feed. |
+| Model setup | Desktop and mobile checks covered GPT-OSS 120B preselection, manual overrides, OpenRouter free fallback, key routing, failed authentication, delayed model lists and paid-model opt-in. The live Ollama catalogue included `gpt-oss:120b`. OpenRouter’s free 120B endpoint list was empty. Cloud inference with a personal account remains unverified. |
+| Installation | Windows checks exercised a local npm tarball, offline npx and global installs, conflicting ports, restart, stop, and cached preferences across reinstall. The ZIP launcher obtained and verified an embedded Python runtime in an environment without system Python on PATH. Native macOS and Linux execution remains unverified. [Portable runtime checks](PORTABLE-RUNTIME.md) |
+
 ## Version 0.1.0
 
 The expanded catalog has 76 unique activity guides at 71 positions and 3,663 positioned landmarks. The road graph connects 2,145 of 2,485 pairs of distinct guide positions. Sites outside a connected trace use a direct bearing. The ten-site meditation set was independently registered against source imagery. [Collectible evidence](COLLECTIBLES.md)

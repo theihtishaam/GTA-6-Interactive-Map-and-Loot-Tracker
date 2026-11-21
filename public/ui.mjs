@@ -1,4 +1,5 @@
 const paths = {
+  mission: '<path d="M5 21V3m0 1c5-3 9 4 15 0l-2 5 2 4c-6 4-10-3-15 0"/>',
   manual: '<path d="M2 5c4-1.5 7-1 10 1.5C15 4 18 3.5 22 5v14c-4-1.5-7-1-10 1.5C9 18 6 17.5 2 19zM12 6.5v14"/>',
   map: '<path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2zM9 3v16M15 5v16"/>',
   book: '<path d="M4 4h14a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2zM4 16h16M8 7h7"/>',
@@ -42,6 +43,7 @@ const paths = {
     '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M2 12h3m14 0h3M12 2v3m0 14v3"/>',
 };
 export const categories = {
+  mission: ["Missions", "Mission", "#ff9bbf"],
   heist: ["Heists", "Heist", "#ffad79"],
   bounty: ["Bounties", "Bounty", "#ff8798"],
   reward: ["Rewards", "Reward", "#f4cf72"],
@@ -97,6 +99,7 @@ export const located = (p) =>
   p.x <= 1 &&
   p.y <= 1;
 export function evidence(r) {
+  if (r.verification?.status === "review") return "Location under review";
   if (r.confidence === "guide" && r.precision === "mission-marker")
     return "Guide · mission start or contact";
   if (r.confidence === "guide" && r.precision === "landmark")

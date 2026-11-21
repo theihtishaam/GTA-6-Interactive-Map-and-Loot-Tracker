@@ -35,6 +35,8 @@ import {
 import { showSettings } from "./settings.mjs";
 import { renderManual } from "./field-manual.mjs";
 import { renderDiscovery } from "./source-view.mjs";
+import { renderGoals, addGoalForEntry, exportGoals, importGoals } from "./goals.mjs";
+import { missionEntries, mergeMissionReports, renderMissions, selectBuild } from "./missions.mjs";
 import { showExport } from "./export-center.mjs";
 import { initThemes, themeControls, bindThemeControls } from "./themes.mjs";
 import { screenshotLocator, followPosition, following } from "./gps.mjs";
@@ -50,6 +52,8 @@ try {
 }
 let state = { reports: [], sources: [], interval: 24, provider: {} },
   guides = [],
+  missions = [],
+  bundledMissions = [],
   landmarks = [],
   catalog = [],
   filtered = [],
@@ -103,7 +107,9 @@ $("dialog").addEventListener("close", () => {
 });
 function rebuild() {
   const done = checklist();
-  catalog = [...guides, ...combinedReports(state), ...journal.pins, ...landmarks].map(
+  const reports = combinedReports(state);
+  missions = mergeMissionReports(bundledMissions, reports);
+  catalog = [...guides, ...missions, ...reports.filter(r => r.category !== "mission"), ...journal.pins, ...landmarks].map(
     (r) => ({ ...r, done: done.has(r.id) }),
   );
   lookup = new Map(catalog.map((r) => [r.id, r]));
@@ -128,9 +134,15 @@ function updateState(s) {
     for (const r of combinedReports(s))
       if (!oldIds.has(r.id)) changedActivityIds.add(r.id);
   state = s;
+  const previous = selected;
   rebuild();
+  if (previous && !selected) unselect();
+  else if (selected && view === "map" && JSON.stringify(previous) !== JSON.stringify(selected)) inspect(selected, false);
+  if (route().stops.some(s => s.entryId)) saveRoute(false, false);
   if (view === "sources" || view === "bounties") sourcesView();
   if (view === "journal") journalView();
+  if (view === "goals") goalsView();
+  if (view === "missions") missionsView();
 }
 function applyFilters() {
   const query = $("search").value.trim().toLowerCase(),
@@ -145,7 +157,7 @@ function applyFilters() {
         category === r.category) &&
       (!type || r.type === type) &&
       (!region || r.region === region) &&
-      (!proof || (proof === "mapped" ? located(r) : proof === "pending" ? !located(r) : r.confidence === proof)) &&
+      (!proof || (proof === "mapped" ? located(r) : proof === "pending" ? !located(r) : r.confidence === proof || r.verification?.status === proof)) &&
       (prog === "all" || (prog === "done") === r.done) &&
       (!words.length || words.every(word =>
         [r.title, ...(r.aliases || []), r.region, r.type, r.category, categories[r.category]?.[0], r.id, r.details]
@@ -387,6 +399,10 @@ function inspect(r, focus = true) {
       ' sites completed · Site ' + esc(r.collectibleIndex) + '</span></div>' : "") +
     (r.publishedAt ? '<p class="hint">Reported ' + esc(new Date(r.publishedAt).toLocaleDateString()) +
       (r.sourceName ? ' · ' + esc(r.sourceName) : '') + '</p>' : "") +
+    (r.verification ? '<section class="claim-check" data-status="' + esc(r.verification.status) + '"><strong>' +
+      esc(r.verification.label) + '</strong><p>' + esc(r.verification.reason) + '</p>' +
+      '<div class="sources-inline">' + (r.verification.sources || []).map(s => link(s.url, s.name)).join(" ") +
+      '</div></section>' : "") +
     ((r.steps || []).length
       ? '<details open><summary>How to complete</summary><ol class="steps">' +
         r.steps.map((s) => "<li>" + esc(s) + "</li>").join("") +
@@ -432,12 +448,21 @@ function inspect(r, focus = true) {
       : "") +
     "</div>" +
     (r.confidence === "personal" ? '<button class="action" id="edit-personal">Edit personal pin</button>' : "") +
+    (hasMissionBuild(r) ? '<button class="action" id="open-build">Open mission build</button>' : "") +
+    (r.category !== "landmark" && r.confidence !== "personal" ? '<button class="action" id="track-goal">' + icon("target") + ' Track as a goal</button>' : "") +
     '<button class="quiet share-card" id="share-field-card">' + icon("export") + ' Share a field card</button>' +
+    '<button class="quiet" id="draft-report">' + icon("book") + ' Draft a community report</button>' +
     (located(r)
       ? '<button class="quiet" id="here">Set as my position</button>'
       : '<p class="hint">Directions unlock when a source identifies a map position.</p>');
   $("close-item").onclick = unselect;
   $("complete").onclick = () => toggleDone(r);
+  if ($("open-build")) $("open-build").onclick = () => openBuild(r);
+  if ($("track-goal")) $("track-goal").onclick = () => {
+    if (addGoalForEntry(r)) switchView("goals");
+    else toast("This entry cannot be added to your goals.");
+  };
+  $("draft-report").onclick = () => draftReport(r);
   updateHeroDistance();
   if ($("edit-personal")) $("edit-personal").onclick = () => newPin(r);
   $("share-field-card").onclick = () => exportCenter(r);
@@ -503,6 +528,8 @@ function toggleDone(r) {
   rebuild();
   if (selected?.id === r.id) inspect(selected, false);
   if (view === "journal") journalView();
+  if (view === "goals") goalsView();
+  if (view === "missions") missionsView();
   toast(done.has(r.id) ? "Marked complete." : "Moved to remaining.");
 }
 let playerId = safeRead("ballot-id", null);
@@ -581,7 +608,7 @@ function reveal(r) {
   inspect(r);
 }
 function switchView(name) {
-  if (!["map", "journal", "sources", "bounties", "manual"].includes(name)) name = "map";
+  if (!["map", "journal", "goals", "missions", "sources", "bounties", "manual"].includes(name)) name = "map";
   view = name;
   const navName = name === "bounties" ? "sources" : name;
   closeIndex();
@@ -592,6 +619,8 @@ function switchView(name) {
     b.setAttribute("aria-current", b.dataset.view === navName ? "page" : "false");
   });
   if (name === "journal") journalView();
+  else if (name === "goals") goalsView();
+  else if (name === "missions") missionsView();
   else if (navName === "sources") sourcesView();
   else if (name === "manual") renderManual($("sheet-content"), {
     openEntry: id => reveal(lookup.get(id)),
@@ -599,6 +628,8 @@ function switchView(name) {
     openSources: () => switchView("sources"),
     openBountyWatch: () => switchView("bounties"),
     openJournal: () => switchView("journal"),
+    openGoals: () => switchView("goals"),
+    openMissions: () => switchView("missions"),
     openRoutes: () => { switchView("map"); routePanel(); },
     openExport: () => { switchView("journal"); exportCenter(); },
     openCategory: id => {
@@ -621,6 +652,58 @@ $("open-journal").onclick = () => switchView("journal");
 $("open-watch").onclick = () => switchView("bounties");
 window.addEventListener("hashchange", () => { if (!loading) switchView(location.hash.slice(1)); });
 $("settings").onclick = () => showSettings(state, open, updateState);
+function goalsView() {
+  renderGoals($("sheet-content"), {
+    catalog, done: checklist(), origin: route().origin, openEntry: row => hasMissionBuild(row) ? openBuild(row) : reveal(row),
+    routeTo: row => { reveal(row); navigate(row); },
+    toggleDone, openBounties: () => switchView("bounties"),
+  });
+}
+
+function hasMissionBuild(row) {
+  return row.category === "mission" && missions.some(mission => mission.id === row.id);
+}
+
+function openBuild(row) {
+  selectBuild(row.id);
+  switchView("missions");
+}
+
+function missionsView() {
+  renderMissions($("sheet-content"), {
+    missions, done: checklist(), builds: journal.builds || {}, toggleDone, openMap:reveal,
+    routeTo: row => { reveal(row); navigate(row); },
+    track: row => { if (addGoalForEntry(row)) switchView("goals"); },
+    step: (row, step, checked) => {
+      const builds = journal.builds ??= {}, done = new Set(builds[row.id] || []);
+      if (checked) done.add(step); else done.delete(step);
+      if (done.size) builds[row.id] = [...done]; else delete builds[row.id];
+      writeJournal(journal);
+    },
+  });
+}
+
+function draftReport(row) {
+  open("Draft a community report",
+    '<label class="form-field"><span>What did you find, or what needs correcting?</span><textarea id="report-observation" maxlength="1100" rows="5"></textarea></label>' +
+    (located(row) && row.space !== "poster" ? '<label class="checkline"><input type="checkbox" id="report-grid">I checked this point in-game. Include its grid as my reported location.</label>' : "") +
+    '<p class="hint">The draft includes the activity name, its original source when available, and your observation. You can edit it on GitHub before posting.</p>' +
+    '<button class="primary" id="prepare-report">Prepare GitHub draft</button><div id="report-preview" aria-live="polite"></div>');
+  $("prepare-report").onclick = () => {
+    const observation = $("report-observation").value.trim();
+    if (!observation) { $("report-observation").focus(); return; }
+    const url = new URL("https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/issues/new");
+    url.searchParams.set("title", ("GTA VI " + categories[row.category][1] + " · " + row.title).slice(0,180));
+    const body = [observation, "Activity: " + row.title, "Area: " + (row.region || "Unknown")];
+    if (row.source) body.push("Original source: " + row.source);
+    if (located(row) && row.space !== "poster") body.push("Atlas reference: " + localCoord(row) + " (" + evidence(row) + ")");
+    if ($("report-grid")?.checked) body.push("ATLAS_GTA6_GRID=(" + Math.round(row.x * 13824 - 10240) + "," + Math.round(10496 - row.y * 19456) + ")");
+    url.searchParams.set("body", body.join("\n\n"));
+    $("report-preview").innerHTML = '<p>' + link(url.href,"Review draft on GitHub") + '</p>';
+    $("report-observation").oninput = () => $("report-preview").replaceChildren();
+    if ($("report-grid")) $("report-grid").onchange = () => $("report-preview").replaceChildren();
+  };
+}
 function journalView() {
   const activities = catalog.filter(
       (r) => r.category !== "landmark" || r.confidence === "personal",
@@ -646,7 +729,7 @@ function journalView() {
     ' Export filtered CSV</button><button class="action" id="loot-json">Export loot JSON</button><button class="action" id="backup">Back up journal</button><button class="action" id="restore">Import backup</button><input id="restore-file" type="file" accept=".json,application/json" hidden></div>' +
     '<p class="hint">Loot exports include ' +
     fmt(filtered.length) +
-    " entries matching the map filters. Your journal backup includes completion, personal pins and routes.</p>" +
+    " entries matching the map filters. Your journal backup includes completion, goals, personal pins and routes.</p>" +
     '<div class="subnav">' +
     [
       ["remaining", "Remaining activities"],
@@ -719,7 +802,7 @@ function journalView() {
   $("backup").onclick = () =>
     download(
       "leonida-field-journal.json",
-      JSON.stringify(journal, null, 2),
+      JSON.stringify({ ...journal, goals: exportGoals() }, null, 2),
       "application/json",
     );
   $("restore").onclick = () => $("restore-file").click();
@@ -728,7 +811,9 @@ function journalView() {
     if (!f) return;
     try {
       if (f.size > 6_000_000) throw Error("Backup is larger than 6 MB.");
-      const incoming = validate(JSON.parse(await f.text()));
+      const backup = JSON.parse(await f.text());
+      const incoming = validate(backup);
+      importGoals(backup.goals);
       const pins = new Map(
         [...journal.pins, ...incoming.pins].map((r) => [r.id, r]),
       );
@@ -737,6 +822,8 @@ function journalView() {
         done: [...new Set([...journal.done, ...incoming.done])],
         pins: [...pins.values()],
         routes: { ...journal.routes, ...incoming.routes },
+        builds: { ...(journal.builds || {}), ...Object.fromEntries(Object.entries(incoming.builds || {}).map(
+          ([id, steps]) => [id, [...new Set([...(journal.builds?.[id] || []), ...steps])]])) },
       };
       writeJournal(journal);
       rebuild();
@@ -819,7 +906,12 @@ function sourcesView() {
   renderDiscovery($("sheet-content"), state, view === "bounties", {
     switchView, isNew: id => changedActivityIds.has(id),
     update: (snapshot, watch) => updateState(watch ? { ...state, bounty: snapshot } : snapshot),
-    openReport: r => { if (r) reveal(lookup.get(r.id) || catalog.find(item => item.source === r.source)); },
+    openReport: r => {
+      if (!r) return;
+      const row = lookup.get(r.id) || catalog.find(item => item.source === r.source || item.liveSource === r.source);
+      if (row) reveal(row);
+      else { switchView("map"); inspect(r, false); }
+    },
   });
 }
 function exportCenter(entry = null) {
@@ -882,7 +974,12 @@ function pickPoint(p) {
 }
 const placedOK = located;
 function navigate(r) {
-  const goal = { x: r.x, y: r.y, label: r.title };
+  const current = lookup.get(r.id);
+  if (!located(current) || current.verification?.status === "review") {
+    toast("This activity needs a supported location before routing.");
+    return;
+  }
+  const goal = { x: current.x, y: current.y, label: current.title, entryId: current.id };
   if (!route().origin) {
     beginPlace(
       { mode: "origin", goal },
@@ -895,6 +992,19 @@ function navigate(r) {
   unselect();
 }
 async function saveRoute(notify = false, persist = true) {
+  const stops = route().stops;
+  const refreshed = stops.flatMap(stop => {
+    if (!stop.entryId) return [stop];
+    const row = lookup.get(stop.entryId);
+    if (!located(row) || row.verification?.status === "review") return [];
+    if (row.x === stop.x && row.y === stop.y && row.title === stop.label) return [stop];
+    return [{ ...stop, x: row.x, y: row.y, label: row.title }];
+  });
+  if (!loading && (refreshed.length !== stops.length || refreshed.some((s,i) => s !== stops[i]))) {
+    route().stops = refreshed;
+    persist = true;
+    if (refreshed.length < stops.length) toast("A route stop lost its location evidence and was removed.");
+  }
   if (persist) writeJournal(journal);
   const rev = ++routeRevision,
     r = route();
@@ -1248,12 +1358,14 @@ document.addEventListener("keydown", (e) => {
   }
 });
 async function boot() {
-  const [data, positions, collectibles, places, m, st, community, ...optional] =
+  const [data, positions, collectibles, places, missionData, missionPositions, m, st, community, ...optional] =
     await Promise.all([
       json("/guides.json"),
       json("/guide-positions.json"),
       json("/collectible-guides.json"),
       json("/landmarks.json"),
+      json("/missions.json"),
+      json("/mission-positions.json"),
       json("/map-meta.json"),
       json("/api/state"),
       json("/community.json"),
@@ -1275,6 +1387,7 @@ async function boot() {
   }
   guides = [...byId.values()];
   landmarks = places;
+  bundledMissions = missionEntries(missionData, byId, places, missionPositions);
   state = st;
   if (/^https:\/\/[a-zA-Z0-9.-]+(:\d+)?$/.test(community.origin))
     voteOrigin = community.origin;
@@ -1327,12 +1440,15 @@ async function boot() {
     if (!document.hidden) poll();
   });
   window.addEventListener("storage", (e) => {
+    if (view === "goals" && e.key?.startsWith("loot-atlas.goal")) goalsView();
     if (e.key !== "loot-atlas.journal") return;
     try {
       journal = readJournal();
       rebuild();
       saveRoute(false, false);
       if (view === "journal") journalView();
+      else if (view === "goals") goalsView();
+      else if (view === "missions") missionsView();
       else if (selected) inspect(selected, false);
     } catch {
       toast("Could not read the updated journal.");

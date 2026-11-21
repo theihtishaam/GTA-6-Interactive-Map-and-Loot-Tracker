@@ -151,8 +151,16 @@ def player(page, base, width, shots, expected_image):
     expect(page.locator("#progress-filter")).to_have_value("remaining")
     ids = page.locator("#results .result").evaluate_all("els => els.map(el => el.dataset.id)")
     assert len(ids) > 1 and "guide-game-horde-earbuds" not in ids
-    ranked = [math.dist(shop, grid(records[i]) if i in records else club) for i in ids]
-    assert all(first <= second + .02 for first, second in zip(ranked, ranked[1:])), ranked
+    # The index now contains mission starts in addition to guides and this player's pin.
+    # Check the visible distance for every type, then independently verify the guide coordinates.
+    ranked = []
+    for label in page.locator("#results .result small").all_text_contents():
+        match = re.search(r"·\s*([\d,.]+)\s*(km|m)\b", label)
+        assert match, label
+        ranked.append(float(match[1].replace(",", "")) * (1000 if match[2] == "km" else 1))
+    assert ranked == sorted(ranked), ranked
+    exact = [math.dist(shop, grid(records[i])) for i in ids if i in records]
+    assert all(a <= b + .02 for a, b in zip(exact, exact[1:])), exact
     if mobile:
         page.locator("#mobile-index").click()
     page.locator("#hero-position").click()

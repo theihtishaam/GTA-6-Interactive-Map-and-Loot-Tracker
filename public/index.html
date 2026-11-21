@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="/map-upgrade.css" />
     <link rel="stylesheet" href="/dashboard.css" />
     <link rel="stylesheet" href="/manual.css" />
+    <link rel="stylesheet" href="/goals.css" />
+    <link rel="stylesheet" href="/missions.css" />
     <link rel="stylesheet" href="/themes.css" />
   </head>
   <body>
@@ -24,8 +26,12 @@
       <nav aria-label="Main navigation">
         <button data-view="map" class="active">
           <i data-icon="map"></i>World map</button
+        ><button data-view="missions" title="Missions and builds">
+          <i data-icon="mission"></i>Missions</button
         ><button data-view="journal">
           <i data-icon="book"></i>Field journal</button
+        ><button data-view="goals" title="Player goals">
+          <i data-icon="target"></i>Goals</button
         ><button data-view="sources">
           <i data-icon="signal"></i>Live sources
         </button><button data-view="manual" title="Player manual">
@@ -71,6 +77,7 @@
             <label class="form-field"><span>Map evidence</span><select id="evidence-filter">
               <option value="">All evidence</option><option value="mapped">Has a map pin</option><option value="pending">Awaiting a pin</option>
               <option value="guide">Researched guides</option><option value="personal">My pins</option>
+              <option value="corroborated">Corroborated reports</option><option value="review">Needs review</option>
             </select></label>
             <label class="checkline"><input id="nearest-first" type="checkbox" disabled>Nearest to my position first</label>
           </details>
@@ -167,7 +174,7 @@
     </main>
     <main id="sheet" class="sheet" hidden><div id="sheet-content"></div></main>
     <footer class="creator-footer">
-      <span>Built by <a href="https://github.com/theihtishaam" aria-label="The Ihtisham · @theihtishaam on GitHub" rel="noreferrer" target="_blank"><strong>The Ihtisham</strong> <span class="creator-handle">@theihtishaam</span></a> <small>· v0.1.0</small></span>
+      <span>Built by <a href="https://github.com/theihtishaam" aria-label="The Ihtisham · @theihtishaam on GitHub" rel="noreferrer" target="_blank"><strong>The Ihtisham</strong> <span class="creator-handle">@theihtishaam</span></a> <small>· v0.1.1</small></span>
       <nav class="creator-links" aria-label="Creator profiles and repository">
         <a href="https://github.com/theihtishaam" target="_blank" rel="noreferrer">GitHub profile</a>
         <a href="https://www.linkedin.com/in/ihtishamdeveloper/" target="_blank" rel="noreferrer">LinkedIn</a>

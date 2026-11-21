@@ -90,6 +90,9 @@ const chapters = [
     body: ({ action }) => `
       <h3>Keep track between sessions</h3>
       <p>Choose <b>Mark complete</b> on a guide, then use the map’s progress filter to see what remains. If you tick the wrong entry, reopen it and undo the completion. The journal keeps your checklist in this browser.</p>
+      <h3>Plan a mission or a collection goal</h3>
+      <p>Open Missions, find a title or chapter, and read the build. Check the starting area and requirements before setting off. Tick the objectives as you play. In Goals, pick one mission or a target number of activities. The planner updates when you complete an entry or discovery supplies a new eligible location.</p>
+      <div class="fm-buttons">${action("openMissions", "Browse missions", "", "mission")}${action("openGoals", "Set a player goal", "", "target")}</div>
       <h3>Take your list with you</h3>
       <p>Set the category, search and progress filters before exporting. In Export center, choose the filtered list and download a printable offline field pack with the map and guide steps. CSV opens in a spreadsheet, and JSON carries structured location data. Use a journal backup to transfer your personal pins and completions to another browser.</p>
       <div class="fm-buttons">${action("openJournal", "Open field journal", "", "book")}${action("openExport", "Export options", "", "export")}</div>`,

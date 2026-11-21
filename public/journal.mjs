@@ -1,9 +1,10 @@
 import { categories, located, safeRead, save } from "./ui.mjs";
-export const blank = () => ({ version: 1, done: [], pins: [], routes: {} });
+export const blank = () => ({ version: 1, done: [], pins: [], routes: {}, builds: {} });
 const idOK = (v) => typeof v === "string" && /^[A-Za-z0-9_.-]{1,128}$/.test(v);
 const point = (v) =>
   located(v)
-    ? { x: v.x, y: v.y, label: String(v.label || "Waypoint").slice(0, 160) }
+    ? { x: v.x, y: v.y, label: String(v.label || "Waypoint").slice(0, 160),
+        ...(idOK(v.entryId) ? {entryId:v.entryId} : {}) }
     : null;
 export function validate(input) {
   if (
@@ -50,6 +51,15 @@ export function validate(input) {
   }
   if (!input.done.every(idOK)) throw Error("Invalid completion ID.");
   out.done = [...new Set(input.done)];
+  if (input.builds !== undefined) {
+    if (!input.builds || Array.isArray(input.builds) || typeof input.builds !== "object" || Object.keys(input.builds).length > 2000)
+      throw Error("Invalid mission build data.");
+    for (const [id, steps] of Object.entries(input.builds)) {
+      if (!/^(?:mission-[a-zA-Z0-9_-]+|[a-f0-9]{24})$/.test(id) || !Array.isArray(steps) || steps.length > 160 ||
+          steps.some(s => typeof s !== "string" || s.length > 2000)) throw Error("Invalid mission objective.");
+      out.builds[id] = [...new Set(steps)];
+    }
+  }
   for (const space of ["atlas", "poster"]) {
     const r = input.routes[space];
     if (!r) continue;
@@ -97,6 +107,8 @@ export function exportCsv(rows, done) {
     "Location source",
     "Supporting guide",
     "Published at",
+    "Report verification",
+    "Verification sources",
   ];
   function safeCell(val) {
     const raw = String(val ?? "");
@@ -131,6 +143,8 @@ export function exportCsv(rows, done) {
     r.locationSource,
     r.secondarySource,
     r.publishedAt,
+    r.verification?.label,
+    (r.verification?.sources || []).map(s => s.url).join(" | "),
   ]);
   download(
     "leonida-loot-export.csv",

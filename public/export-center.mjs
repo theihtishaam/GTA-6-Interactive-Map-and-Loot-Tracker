@@ -55,12 +55,13 @@ export function fieldPack(rows, data, image, includeRoute, exportedAt) {
   const shared = data.entry && rows.length === 1 && rows[0].id === data.entry.id;
   const heading = shared ? rows[0].title : "GTA 6 Loot Map · Field pack";
   const articles = rows.map((r,i) => {
-    const sources = [...new Set([r.source,r.locationSource,r.secondarySource,r.sourceImage].filter(Boolean))];
+    const sources = [...new Set([r.source,r.locationSource,r.secondarySource,r.sourceImage,...(r.verification?.sources || []).map(s=>s.url)].filter(Boolean))];
     const status = data.done.has(r.id) ? "Completed" : "Remaining";
     const coords = grid(r,meta);
     return '<article><h3>' + (i+1) + '. ' + esc(r.title) + '</h3><small>' +
       [status,categories[r.category]?.[1] || r.category,r.region,evidence(r),coords ? "Grid "+coords : "Position pending or separate map frame"].filter(Boolean).map(esc).join(' · ') +
-      '</small><p>' + esc(r.details) + '</p>' + (r.steps?.length ? '<ol>' + r.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol>' : '') +
+      '</small><p>' + esc(r.details) + '</p>' + (r.verification ? '<p><strong>' + esc(r.verification.label) + '</strong> · ' + esc(r.verification.reason) + '</p>' : '') +
+      (r.steps?.length ? '<ol>' + r.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol>' : '') +
       '<p>' + sources.map((u,i)=>link(u,i ? "Supporting source "+i : "Original source")).join(" · ") + '</p></article>';
   }).join("");
   const itinerary = includeRoute && data.route.origin ? '<section><h2>Planned route</h2><p>Start · ' +

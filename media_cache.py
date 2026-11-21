@@ -101,10 +101,10 @@ class MediaCache:
 
     def catalog(self):
         result = {}
-        for file in ("guides.json", "collectible-guides.json"):
+        for file in ("guides.json", "collectible-guides.json", "missions.json"):
             try:
                 for row in json.loads((self.public / file).read_text("utf8")):
-                    result[row["id"]] = row
+                    result[row["id"]] = {**row,"sourceImage":row["startImage"]} if row.get("startImage") else row
             except FileNotFoundError:
                 continue
         for id_, position in json.loads((self.public / "guide-positions.json").read_text("utf8")).items():

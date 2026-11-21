@@ -1,5 +1,6 @@
 """Discover and rank new public GTA VI feeds through bounded, anonymous search."""
 
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -28,6 +29,7 @@ MAX_URL_SIZE = 2000
 INDEX_TOPICS = (
     '("collectibles" OR "headphones" OR "earbuds" OR "duffel bag")',
     '("bank vaults" OR "heists" OR "bounties" OR "gloves" OR "loot")',
+    '("mission walkthrough" OR "story mission" OR "side mission" OR "walkthrough")',
 )
 INDEX_BASE = "https://news.google.com/rss/search?"
 HOSTNAME = re.compile(r"(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{1,62}$")
@@ -37,7 +39,7 @@ PRIVATE_PARAMETERS = {
 }
 TOPIC = re.compile(
     r"\b(?:bank\w*|bount\w*|collect\w*|headphones?|earbuds?|duffel|"
-    r"heist\w*|loot|reward\w*|gloves?|equipment|secret\w*|treasure)\b",
+    r"heist\w*|loot|reward\w*|gloves?|equipment|secret\w*|treasure|mission\w*|walkthroughs?)\b",
     re.I,
 )
 NETWORK_FAILURE = (OSError, ValueError, client.HTTPException, ElementTree.ParseError)
@@ -405,6 +407,7 @@ def inspect_candidate(candidate, fetcher, landmarks, now):
     newest = max((report["publishedAt"] for report in reports), default=None)
     health.update(
         status="ok", seen=seen, matched=len(reports), url=feed_url, feedUrl=feed_url,
+        byCategory=dict(Counter(row["category"] for row in reports)),
         score=score, qualified=bool(reports), latestMatchAt=newest,
         lastQualifiedAt=now.isoformat() if reports else candidate.last_qualified_at,
         rankReason=f"{fresh} accepted in 72 hours × 5 + {older} older accepted × 2."

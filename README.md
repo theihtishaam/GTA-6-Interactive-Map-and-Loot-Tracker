@@ -1,101 +1,129 @@
+![GTA 6 Loot Map cover. Two travelers trace a route across a paper map at a Leonida-inspired marina. Original fan illustration.](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/cover.webp)
+
 # GTA 6 Loot Map
 
-**By theihtishaam · The Ihtisham · v0.1.0**
+An open-source GTA VI companion by **The Ihtisham**. Pick a reward, put your character on the map, and plot a route across Leonida. Keep your mission checklist on your own computer. [@theihtishaam on GitHub](https://github.com/theihtishaam) · [Star the project](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker) · [LinkedIn](https://www.linkedin.com/in/ihtishamdeveloper/)
 
-An open-source GTA 6 interactive map and loot tracker. Place your character on the map of Leonida, see how far away a reward is, plan a route, and mark what you collected. Discovery runs without an AI model. The installed maps, journal, routes and exports work offline.
+**176 mission entries · 88 mission start waypoints · 76 loot and activity guides · 3,663 landmarks.** The bundled map, routes and journal work offline. Leave the local server running to check public sources for new missions, rewards and bounties **every 24 hours**. When a report identifies a location, the atlas pins it automatically. [Mission coverage](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/MISSIONS.md) · [How discovery works](#4-check-for-new-finds)
 
-![GTA 6 Loot Map showing a player’s route across Vice City](docs/atlas-preview.webp)
+![Every 24 hours the running atlas checks public sources for missions, rewards and bounties, reviews the evidence and automatically pins supported locations. Unlocated reports stay searchable. Players can choose 6 or 12 hours instead.](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/daily-discovery.webp)
 
-The preview uses community cartography by YANIS, GTADB and contributors, adapted under CC BY 4.0. [Map credits](docs/MAP-DATA.md) · [GitHub profile](https://github.com/theihtishaam) · [LinkedIn profile](https://www.linkedin.com/in/ihtishamdeveloper/) · [Star this repository](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker)
+## 1. Install and open the map
 
-## Start the app
+### Quick start with npm
 
-Download and extract the [v0.1.0 source package](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/releases/tag/v0.1.0), or clone this repository. [First-session walkthrough and release notes](docs/RELEASE-0.1.0.md)
+With **Node.js 22 or newer**, open a terminal and run this command. If npm asks to install the package on first launch, enter **y**. [Get Node.js](https://nodejs.org/en/download) · [View the npm package](https://www.npmjs.com/package/gta6-loot-map)
 
-On Windows, double-click **Start Atlas.cmd**. On Windows, macOS or Linux with Python 3.10 or newer:
+```sh
+npx gta6-loot-map
+```
 
-    python launch_atlas.py
+![npm quick start showing Node.js 22 or later, npx gta6-loot-map to open the map, and npx gta6-loot-map stop to shut it down](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/npm-start.webp)
 
-The launcher opens [the local atlas](http://127.0.0.1:8765/). On first launch it fetches pinned copies of the published game map and Rockstar poster for local use. An unavailable download falls back to the bundled community map. For an offline start with the bundled or previously installed layers, use the following command.
+The map opens in your browser. If it doesn’t, copy the local URL printed in the terminal. The launcher normally uses port 8765 and selects an available port if needed. Keep the server running while you play. The launcher can set up checksum-verified portable Python on supported Windows, macOS and Linux systems. [Supported platforms](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/PORTABLE-RUNTIME.md)
 
-    python launch_atlas.py --bundled-only
+If you prefer to install the command once and use it again from any folder:
 
-Start with **Player manual** for a seven-chapter walkthrough. Use **My position** to place your character, **Route planner** for directions, **Field journal** for exports and **Live sources → Bounty Watch** to review community findings. The map-style control beside Route planner offers map layers, dark mode and high contrast.
+```sh
+npm install -g gta6-loot-map
+gta6-loot-map
+gta6-loot-map status
+gta6-loot-map stop
+```
 
-For a server without a browser window, run the following in the project directory. The server stays available while this process runs. It catches up on overdue checks after a restart.
+Use `npx gta6-loot-map status` or `npx gta6-loot-map stop` if you started with npx. To start again, run `npx gta6-loot-map` or the installed `gta6-loot-map` command. The npm launcher keeps its local data outside the installed package. See [advanced setup](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/ADVANCED.md) for Python requirements and command options.
 
-    python launch_atlas.py --no-open
+### Windows ZIP alternative
 
-On Windows, optionally run the following in PowerShell to start the local discovery server after each sign-in without opening a browser. The second command removes that setting.
+![Windows ZIP setup in three steps. Extract the ZIP, double-click Start Atlas.cmd, and use Stop Atlas.cmd when finished.](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/windows-start.webp)
 
-    .\tools\WindowsStartup.ps1
-    .\tools\WindowsStartup.ps1 -Remove
+1. Download the [v0.1.1 Windows ZIP](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/releases/download/v0.1.1/GTA-6-Interactive-Map-and-Loot-Tracker-v0.1.1.zip). Right-click it in File Explorer, choose **Extract All**, and open the extracted folder.
+2. Double-click **Start Atlas.cmd**. It uses installed Python 3.10 or newer or downloads a verified portable Python 3.14.10 to the app’s `.atlas` folder. The first download needs internet access. This path needs no Node.js or npm.
+3. Keep the launcher window open. Double-click **Stop Atlas.cmd** when you’re done. Starting again from the same extracted folder reopens the running map.
 
-## Find and track a location
+![First launch of the World map with the search field, activity layers, and My position button](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/world-map.webp)
 
-1. Select a layer such as **Heists** or **Earbuds**. Only matching activity pins remain and glow. Select **Landmarks** to filter buildings by type, or **All layers** to search everything. Type a name, region, source ID or building type in the index. Press **/** to focus search.
-2. Click a pin or a search result to see the location, source and available steps. Overlapping activities open a list. The map highlights the selected location. Coordinates from a screenshot, a community venue and an area report have different evidence labels.
-3. Choose **Mark complete**. Use the checklist filter to see completed or remaining entries. Empty categories have a shortcut for recording a personal pin. Each player pin can include a reward note and completion steps.
-4. In **Field journal**, export your filtered list as CSV or loot JSON. Loot JSON retains the coordinate reference, provenance, evidence and steps. A separate journal backup includes personal pins, progress and routes. Importing merges pins and completion records and restores the routes in the backup.
+*On a small screen, select **Map index** to open search and filters.*
 
-The 3,663 positioned landmark records include buildings, shops, transport and natural features. There are 76 unique sourced activity guides, including 22 bank jobs, seven payday jobs, 15 electronics retailers and all ten meditation sites. The meditation checklist covers 18 actions. Some community buildings have only a counterpart name or source number. Coverage varies by category. A discovery without a usable position stays in the index. [Guide research](docs/PLAYER.md) · [Meditation evidence](docs/COLLECTIBLES.md) · [Activity pins](docs/ACTIVITY-PINS.md) · [Map data](docs/MAP-DATA.md)
+For either installation, you can also open **Settings**, scroll to **Local server**, and click **Stop server**. Closing the browser tab leaves scheduled checks running. After you stop, run your npm start command again or double-click **Start Atlas.cmd** in the extracted ZIP folder to resume checks.
 
-The **Export center** builds a single-file, printable HTML field pack with an embedded community map, optional route, checklist, steps and evidence links. Choose the current map filters, all activities, bounties, completed entries, personal pins or the entire atlas. CSV includes game-grid coordinates. JSON preserves provenance and can include the route. Use a journal backup when moving editable progress to another browser.
+![The Local server settings section shows the Stop server button and tells players that closing the browser tab leaves scheduled checks running](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/stop-server.webp)
 
-Open a marker and choose **Share a field card** to save one location, its neighborhood map and instructions for another player. Your route is included only if you select it. In **Map appearance**, choose **Vice Neon**, **Ocean Drive** or **Field Gold** and adjust marker glow. Players who prefer reduced motion retain a static highlight.
+## 2. Pick a first stop
 
-## Navigate
+![Original field-guide illustration of wireless earbuds, a canvas duffel, driving gloves and fictional cash at the marina](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/gear.webp)
 
-Choose **My position**, then click where your character stands on the game map. The **YOU** marker is your starting point. Open an activity to read its direct distance and compass direction. **Route here** shows the next stop, estimated itinerary distance and a direction cue. **My position → Nearby activities** lists unfinished activities in distance order. Move your point after travelling, or use the optional screenshot and live-coordinate inputs.
+| Look for | Where to start | What you get or pay in-game |
+| --- | --- | --- |
+| Afternoon Delight | In Chapter 2, progress past **Coffee Break** and wait for Vicki’s call. Search **Afternoon Delight** for the Delights venue in Port Gellhorn. | **GTA$10,000** via BuckMe the following in-game day. [Walkthrough](https://www.powerpyx.com/gta-6-afternoon-delight-rob-vickis-boss-walkthrough/) |
+| First duffel bag | Open the **Lab Fees** build and follow Jason’s objective. | Pick up the bag during the mission. [Walkthrough](https://www.powerpyx.com/gta-6-lab-fees-collect-brians-rent-walkthrough/) |
+| Earbuds | Select **Earbuds** and open **Game Horde**. Choose which character will make the purchase. | Check the price in the in-game shop. Jason and Lucia have separate audio gear. [Headphone guide](https://www.gamesradar.com/games/grand-theft-auto/gta-6-headphones-music-radio-podcasts-how-to-use/) |
 
-Set your starting point from a place’s detail panel, by clicking the map, or by entering the game’s X/Y grid. Choose **Route here** on a destination. Use Route planner to see estimated distance, directional cues, ordered stops and the complete route. **Reached first stop** advances the itinerary. Drag and pinch, use the wheel, or use arrow keys and zoom controls on the focused map.
+![Actual atlas screenshot with the Afternoon Delight venue selected, its GTA$10,000 reward, three completion steps and the Route here button](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/reward-map.webp)
 
-A solid line follows a connected trace of the road artwork. Dashed ends connect the marker to the road. A disconnected road, an offshore point, or inaccessible terrain yields a labeled direct bearing. Turn cues follow the shape of the trace. The graph cannot establish one-way rules, lane choices, locked interiors or mission-dependent barriers. [Navigation method and checks](docs/NAVIGATION.md)
+1. In **World map**, select a category such as **Collectibles** or **Earbuds**. You can also type an item name or region in the search box.
+2. Click a result or pin. Read **How to complete** and the source before travelling. A venue pin can lead you to the right building. A map-marker pin follows the in-game marker, so use your game’s prompt to find the interaction.
+3. When you finish that location in GTA 6, select **Mark complete**. The checklist filter lets you hide completed entries.
 
-**Locate from screenshot** matches a selected GTA VI pause-map image on this computer. Click your player arrow in the preview. This feature requires the installed in-game map and the optional image-matching libraries. Install them with the Python interpreter used to launch the server:
+![A meditation search highlights the Smooth Sand pin and opens its steps, coordinates and evidence links](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/filter-and-pin.webp)
 
-    python -m pip install numpy opencv-python-headless
+*Try the search term **meditation**. The atlas includes all ten documented sites. Jason’s House is available in Chapter 1 only.* [Meditation evidence](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/COLLECTIBLES.md)
 
-**Follow local coordinate feed** accepts position updates from an existing local integration. It is opt-in and polls only an open, visible tab. The atlas needs an external coordinate source for continuous tracking on a stock console. The manual and screenshot modes work without a telemetry adapter. Reaching a route stop on a live feed advances the itinerary within a 12-unit map radius. [Local API](docs/API.md)
+## Mission builds and goals
 
-## Discovery and cost
+Open **Missions** and search by title, quest giver or starting area. Select the result to open its **Mission build**. Read the unlock requirements, tick objectives as you play, then mark the mission complete. **Route to start** appears when the atlas has a supported starting position. A mission that starts on a phone call can still have a complete walkthrough.
 
-General discovery and Bounty Watch each default to 24 hours. Choose **6, 12 or 24 hours** independently or use **Check now**. Closing the tab keeps the server’s schedules running. An overdue check runs at the next launch. Each feed shows its last result.
+![A mission build with objectives and evidence](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/mission-build.webp)
 
-The built-in sources include public GitHub issues, community syndication feeds, and gameplay publications. The importer checks game, date, topic and location evidence, retains source links, and deduplicates by report ID. An explicit unique venue can receive an approximate pin. Broader reports stay searchable. The bundled map revision and researched guides are versioned separately from the discovery cache.
+Open **Goals** to track one mission or set a category target, such as three collectibles. Set your chapter and character to narrow down the next stop. Open its instructions or route from your character’s position. A bounty goal stays on your list and shows its shortfall until eligible reports arrive. Your checklist, builds and goals travel together in a journal backup.
 
-General discovery also searches for new public publishers, locates their feeds, and ranks them using recent qualifying reports. Bounty Watch checks seven automatic sources and provides five additional manual community links. Supported source screenshots and article previews are cached locally with attribution. Submit discoveries through the repository’s location issue template. [Source discovery](docs/RESOURCE-DISCOVERY.md) · [Bounty coverage](docs/API.md) · [Report a location](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/issues/new?template=location.md)
+![A real player goal for the first duffel bag with its Lab Fees instructions and route action](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/goals.webp)
 
-**Ollama Cloud** offers a live model picker. Its current published pricing meters cloud tokens. The picker suggests **gpt-oss:20b** for short extraction tasks when available and requires consent before enabling metered inference. For free hosted inference choose **OpenRouter → openrouter/free**. Local Ollama, OpenCode Console and compatible custom endpoints are also supported. [Model research and limits](docs/MODELS.md) · [Ollama pricing](https://ollama.com/pricing) · [OpenRouter free router](https://openrouter.ai/openrouter/free)
+## 3. Follow a route and save your progress
 
-Inference is off until enabled. At most one new or changed eligible report per refresh is sent for enrichment. A model can suggest a short source-backed step or a named venue present in the excerpt. The server checks the literal evidence and obtains coordinates from the catalogue. Remote provider keys stay in process memory and must be reentered after a server restart. The no-model mode uses zero inference credits. External providers determine free-tier quotas and charges.
+![GTA 6 Loot Map in Vice Neon showing activity markers, a player position and a traced route through Vice City](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/route-planner.webp)
 
-## Votes
+1. In the atlas, choose **My position** and click the location that matches your in-game character. If you’re already at a listed place, open it and choose **Set as my position**.
+2. Open your destination and choose **Route here**. The GPS card shows the next stop. Solid lines follow mapped road traces. A dashed line shows an estimated connection or a direct bearing when no road trace connects the points. [How directions are calculated](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/NAVIGATION.md)
+3. As you travel in the game, update your position in the atlas. Use **Route planner → Reached first stop** to advance a multistop route. The optional screenshot locator and coordinate feed are described in [advanced features](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/ADVANCED.md#optional-positioning).
+4. Open **Field journal** to review completed locations, add personal pins and back up your progress. Use **Export center** for a printable field pack or a filtered list.
 
-Each entry shows Yes/No votes, total ballots, and the percentage positive. A second click on the same choice withdraws it. Replacing a choice updates the existing ballot. Zero ballots display **No votes yet**. A source’s GitHub reactions, when supplied, appear separately. Votes describe player feedback and do not verify a coordinate.
+![Field journal showing a completed meditation and buttons for exporting, backup and personal pins](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/field-journal.webp)
 
-By default, ballots are stored in this atlas’s SQLite database. To share totals across installations, a community operator can run the included service on an existing HTTPS host:
+*Use a **journal backup** to move editable progress and routes to a different browser. CSV is for reviewing or sharing a list.*
 
-    python community_votes.py --port 8766
+## 4. Check for new finds
 
-Reverse-proxy only the vote endpoint to this loopback port. Set the HTTPS origin in **public/community.json** on installations that should use it, then reload the app. The optional service accepts the default atlas origins on port 8765. Use its repeatable `--origin` option for another trusted frontend origin. The service stores anonymous browser ballot IDs. Clearing browser storage creates a new ID, so totals are advisory. No public voting service is configured by default.
+Open **Live sources → All activities** for public reports about heists, gear and rewards. Open **Bounty Watch** for bounty-specific searches. Each defaults to **Every 24 hours** and has its own **Check now** button. Choose 6, 12 or 24 hours and select **Save schedule** to change either one. Both run while the local server is open.
 
-## Data, development and verification
+![Live sources with All activities selected and the refresh schedule set to Every 24 hours](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/live-sources.webp)
 
-The Python server and browser modules require no npm build, external tile service or hosted database. The optional GTADB street-map layer can be built locally with Pillow. The following installs all optional map images from the documented pinned sources:
+*This is the first-launch view before checks finish. Open a report to check its evidence. Discoveries with uncertain locations stay in the feed without a pin.*
 
-    python -m pip install Pillow
-    python tools/install_local_maps.py
+![Bounty Watch with an independent 24-hour schedule, source coverage and the no qualifying reports state](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/bounty-watch.webp)
 
-Private runtime data lives in **.atlas/**. The distributed code is MIT licensed. GTADB-derived cartography and data retain their CC BY 4.0 attribution. Barlow Condensed uses the SIL Open Font License. The separately downloaded game images remain with their rights holders. This is an independent fan project. [Software license](LICENSE) · [Data credits](docs/MAP-DATA.md) · [Font license](public/fonts/OFL.txt)
+*After a check, zero qualifying reports means the checked sources produced no eligible bounty claims. Open the public directory to inspect the checked feeds or browse a community manually.* [Source discovery and coverage](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/RESOURCE-DISCOVERY.md) · [Bounty Watch API](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/API.md)
 
-Run the integration and data tests with Python, Pillow and NumPy/OpenCV installed. Node is used only by the optional routing test. The independent player walkthrough uses Playwright and a disposable Chrome context.
+Every discovered report carries a source. **Corroborated** means independent accounts match a specific activity and location. **Needs review** hides a disputed pin and removes its linked route stop. Choose **Draft a community report** on any entry to write a correction, review it and post it yourself on GitHub. [Evidence rules](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/EVIDENCE-REVIEW.md)
 
-    python -m unittest discover -s tests -p "test_*.py"
-    python tests/player_guides_test.py
-    node tests/player_routing.mjs
-    python tests/player_walkthrough.py --installed-layers
-    python tests/player_gps.py
+### Optional AI
 
-[Research and implementation plan](docs/RESEARCH-AND-PLAN.md) · [Navigation coverage](docs/NAVIGATION.md) · [Developer API](docs/API.md)
+Open **Settings** to connect a provider. Ollama Cloud preselects **GPT-OSS 120B** from its live catalogue. Keep it or choose another model before enabling enrichment. For free hosted inference, OpenRouter prefers the free 120B variant when listed and otherwise offers its free router. Local Ollama uses a model already on your computer. Ollama Cloud requires consent to metered use. [Model setup and cost](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/MODELS.md)
+
+![Optional model setup showing the empty local key field, provider selector and model catalogue](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/model-setup.webp)
+
+### A first-day routine
+
+Open **Player manual** and start with **First launch**. Pick a landmark you recognize in the game, set your position, and route to one nearby activity. Check it off when you finish, back up your journal, then check **Live sources** or leave the default schedules running in the background.
+
+![Player manual with the opening chapter and a guided Wonder Whale collectible exercise](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v0.1.1/docs/quickstart/player-manual.webp)
+
+## Sources and credits
+
+- Community cartography by YANIS, GTADB and contributors is adapted under CC BY 4.0. The screenshots above use that bundled map. [Map data and attribution](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/MAP-DATA.md)
+- The illustrated cover and gear spread are original AI-assisted fan art. The dashboard images show the running companion app.
+- Guide pins link to their published evidence. An in-game map marker, a venue pin and an area report represent different levels of precision. [Guide research](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/PLAYER.md) · [Activity-pin evidence](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/ACTIVITY-PINS.md)
+- This independent fan project’s code is MIT licensed. Optional locally downloaded game images remain with their rights holders. [License](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/LICENSE) · [Developer notes and tests](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/blob/v0.1.1/docs/ADVANCED.md#development)
+
+**Built by The Ihtisham (@theihtishaam).** [GitHub profile](https://github.com/theihtishaam) · [LinkedIn](https://www.linkedin.com/in/ihtishamdeveloper/) · [Star the project](https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker)
 

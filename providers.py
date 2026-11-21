@@ -18,7 +18,21 @@ BASES = {
 LOOPBACK = {"localhost", "127.0.0.1", "::1"}
 MODEL = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_.:/-]{0,159}\Z")
 KEY_REQUIRED = {"ollama-cloud", "openrouter", "opencode"}
-CLOUD_EXTRACT_MODEL = "gpt-oss:20b"
+OLLAMA_120B = "gpt-oss:120b"
+OPENROUTER_120B_FREE = "openai/gpt-oss-120b:free"
+MODEL_PREFERENCES = {
+    "ollama-cloud": (OLLAMA_120B,),
+    "ollama-local": (OLLAMA_120B,),
+    "openrouter": (OPENROUTER_120B_FREE, "openrouter/free"),
+    "opencode": ("gpt-oss-120b", "openai/gpt-oss-120b"),
+    "custom": ("openai/gpt-oss-120b", "gpt-oss-120b", OLLAMA_120B),
+}
+
+
+class CatalogueUnavailable(RuntimeError):
+    def __init__(self, cause):
+        super().__init__(failure_message(cause))
+        self.unsupported = getattr(cause, "code", None) in (404, 405, 501)
 
 
 @dataclass(frozen=True)
@@ -77,7 +91,10 @@ def configure(values, current=Provider(), *, probe=False):
         return Provider()
 
     raw_base = values.get("base", current.base if current.kind == kind else "")
-    model = values.get("model", current.model if current.kind == kind else "")
+    default_model = current.model if current.kind == kind else ""
+    if not default_model and values.get("enabled") is True and kind in ("ollama-cloud", "ollama-local", "openrouter"):
+        default_model = MODEL_PREFERENCES[kind][0]
+    model = values.get("model", default_model)
     key = values.get("key")
     enabled = values.get("enabled", False)
     allow_paid = values.get("allowPaid", current.allow_paid if current.kind == kind else False)
@@ -85,7 +102,7 @@ def configure(values, current=Provider(), *, probe=False):
         raise ValueError("Model and base must be text.")
     if type(enabled) is not bool or type(allow_paid) is not bool:
         raise ValueError("Enabled and cost consent must be true or false.")
-    model = model.strip() or ("openrouter/free" if kind == "openrouter" else "")
+    model = model.strip()
     if model and not MODEL.fullmatch(model):
         raise ValueError("Enter a valid model ID.")
     base = BASES[kind]
@@ -96,6 +113,8 @@ def configure(values, current=Provider(), *, probe=False):
         key = current.key if current.kind == kind and current.base == base else ""
     if not isinstance(key, str) or len(key) > 512 or re.search(r"[^\x21-\x7e]", key):
         raise ValueError("Provide the key as a single line without spaces.")
+    if key.startswith("sk-or-v1-") and kind != "openrouter":
+        raise ValueError("Choose OpenRouter for an OpenRouter API key.")
     if key and (key in model or key in base):
         raise ValueError("The model and base cannot contain the provider key.")
 
@@ -123,6 +142,27 @@ def endpoint_request(config, url, *, payload=None, fetcher=fetch, send_key=True)
                              max_size=262_144 if payload else 2_000_000))
 
 
+def check_access(config, fetcher=fetch):
+    if config.kind == "ollama-local":
+        return "local"
+    if not config.key or config.kind not in ("ollama-cloud", "openrouter"):
+        return "catalogue-only"
+    try:
+        if config.kind == "ollama-cloud":
+            # Ollama's native Whoami request. Discard the account metadata.
+            result = endpoint_request(config, "https://ollama.com/api/me", payload={}, fetcher=fetcher)
+            valid = isinstance(result, dict) and bool(result.get("name") or result.get("Name"))
+        else:
+            result = endpoint_request(config, "https://openrouter.ai/api/v1/key", fetcher=fetcher)
+            info = result.get("data") if isinstance(result, dict) else None
+            valid = isinstance(info, dict) and bool(info.get("label"))
+        if not valid:
+            raise ValueError
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise RuntimeError("The selected provider could not confirm the key. " + failure_message(exc)) from None
+    return "verified"
+
+
 def list_models(config, fetcher=fetch):
     if config.kind == "none":
         raise ValueError("Choose an AI provider to check available models.")
@@ -136,7 +176,7 @@ def list_models(config, fetcher=fetch):
         url = config.base + "/models"
     try:
         cloud = config.kind == "ollama-cloud"
-        response = endpoint_request(config, url, fetcher=fetcher, send_key=not cloud)
+        response = endpoint_request(config, url, fetcher=fetcher, send_key=config.kind == "custom")
         local_ollama = config.kind == "ollama-local"
         rows = response["models" if local_ollama else "data"]
         if not isinstance(rows, list):
@@ -172,17 +212,21 @@ def list_models(config, fetcher=fetch):
                        for field in ("input_modalities", "output_modalities")):
                     continue
             ids.add(name)
+        recommended = next((name for name in MODEL_PREFERENCES[config.kind] if name in ids), None)
         if config.kind == "openrouter":
             ordered = sorted(ids, key=lambda name: (name != "openrouter/free", not name.endswith(":free"), name))
         else:
             ordered = sorted(ids)
-        result = {"models": ordered[:250], "selectedAvailable": config.model in ids if config.model else None}
+        if recommended is not None:
+            ordered.remove(recommended)
+            ordered.insert(0, recommended)
+        result = {"models": ordered[:250], "selectedAvailable": config.model in ids if config.model else None,
+                  "recommended": recommended}
         if cloud:
-            result["recommended"] = CLOUD_EXTRACT_MODEL if CLOUD_EXTRACT_MODEL in ids else None
             result["billing"] = "metered"
         return result
     except (OSError, ValueError, KeyError, TypeError) as exc:
-        raise RuntimeError(failure_message(exc)) from None
+        raise CatalogueUnavailable(exc) from None
 
 
 def named_venues(text, landmarks):
@@ -217,13 +261,15 @@ def add_source_steps(config, report, fetcher=fetch, *, landmarks=()):
     if ollama:
         url = config.base + "/api/chat"
         body["options"] = {"num_predict": 220}
-        if config.model == CLOUD_EXTRACT_MODEL:
+        if config.model in (OLLAMA_120B, "gpt-oss:20b"):
             body["think"] = "low"
         if config.kind == "ollama-local":
             body["format"] = "json"
     else:
         url = config.base + "/chat/completions"
         body["max_tokens"] = 220
+        if config.kind == "openrouter" and config.model in (OPENROUTER_120B_FREE, "openai/gpt-oss-120b"):
+            body["reasoning"] = {"effort": "low"}
 
     try:
         response = endpoint_request(config, url, payload=body, fetcher=fetcher)

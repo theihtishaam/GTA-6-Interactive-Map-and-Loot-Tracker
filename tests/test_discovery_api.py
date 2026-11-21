@@ -12,6 +12,7 @@ from urllib.error import URLError
 
 from discovery import LAUNCH, REVIEW_EMBARGO, SOURCES, discover, make_report, parse_feed
 from providers import Provider, add_source_steps, configure, list_models
+from report_verification import review_reports
 from server import Atlas, LocalServer
 
 PUBLISHED = LAUNCH.isoformat()
@@ -50,8 +51,10 @@ class DiscoveryTests(unittest.TestCase):
             raise URLError("A private-looking upstream value must not surface.")
 
         sources, reports = discover([LANDMARK], fetcher)
-        self.assertEqual([source["status"] for source in sources],
-                         ["ok", "error", "ok", "error", "error", "error"])
+        responding = {source["id"] for source in sources if source["status"] == "ok"}
+        self.assertEqual(responding, {"github", "gta6-how"})
+        self.assertEqual(sources[0]["matched"], 1)
+        self.assertEqual(sources[0]["byCategory"], {"gloves": 1})
         self.assertNotIn("private-looking", json.dumps(sources))
         self.assertEqual(reports[0]["communityVotes"], {"up": 11, "down": 2, "url": PUBLIC_LINK})
         self.assertEqual(reports[0]["confidence"], "area")
@@ -101,6 +104,71 @@ class DiscoveryTests(unittest.TestCase):
         no_location = (guide[0], "Synthetic Harbor is popular.", *guide[2:])
         self.assertIsNone(make_report(source, no_location, [LANDMARK])["x"])
 
+    def test_single_mission_requires_a_walkthrough_and_routes_only_to_its_start(self):
+        source = next(source for source in SOURCES if source.id == "powerpyx-missions")
+        destination = {**LANDMARK, "id": "destination", "title": "Synthetic Store", "x": .5}
+        item = (
+            "GTA 6 Moonlight Shift Walkthrough",
+            "Moonlight Shift is a main mission. Finish it by talking at Synthetic Store."
+            " Starting Location: Synthetic County > Synthetic Harbor Chapter: Chapter 3"
+            " Requirement: Complete the previous mission Can Be Started By: Lucia Reward: None",
+            "https://www.powerpyx.com/gta-6-moonlight-shift-walkthrough/", PUBLISHED, None,
+        )
+        row = make_report(source, item, [LANDMARK, destination])
+        self.assertEqual((row["category"], row["missionName"], row["chapter"], row["character"]),
+                         ("mission", "Moonlight Shift", 3, "Lucia"))
+        self.assertEqual(row["source"], item[2])
+        self.assertEqual(row["sourceName"], source.name)
+        self.assertEqual(row["landmarkId"], LANDMARK["id"])
+        self.assertEqual(row["prerequisite"], "Complete the previous mission")
+        self.assertEqual(row["confidence"], "area")
+        self.assertEqual(row["startingLocation"], "Synthetic County > Synthetic Harbor")
+        text_only = make_report(source, item, [destination])
+        self.assertIsNone(text_only["x"])
+        self.assertEqual(text_only["region"], "Synthetic County > Synthetic Harbor")
+        for title in (
+            "GTA 6 Full Walkthrough – All Missions",
+            "GTA VI Release Times: Story Walkthrough",
+            "GTA 6 Mission List and Rewards",
+            "GTA VI Moonlight Shift Review",
+            "GTA VI Moonlight Shift and Cold Noon Walkthrough: Both Chapter 3 Missions",
+        ):
+            with self.subTest(title=title):
+                self.assertIsNone(make_report(source, (title, *item[1:]), [LANDMARK]))
+        changed = (item[0], item[1] + " The mission was removed in the latest patch.", *item[2:])
+        stale = make_report(source, changed, [LANDMARK])
+        result, = review_reports([stale])
+        self.assertEqual(result["verification"]["status"], "review")
+        self.assertIsNone(result["x"])
+        self.assertEqual(stale["x"], .25)
+
+    def test_compact_publisher_mission_metadata_and_broad_collectible_leads(self):
+        source = next(source for source in SOURCES if source.id == "gtaboom")
+        row = make_report(source, (
+            "How to Complete Moonlight Shift in GTA 6",
+            "Follow the green signs to find the foreman, then take the bag to the northern gate.",
+            "https://www.gtaboom.com/gta-6-moonlight-shift-walkthrough-ffff", PUBLISHED, None,
+        ), [LANDMARK])
+        self.assertEqual((row["missionName"], row["category"], row["confidence"]),
+                         ("Moonlight Shift", "mission", "lead"))
+        named_part = make_report(source, (
+            "GTA VI Lighthouse Walkthrough (Part 2 of 3): Repair the Lantern",
+            "Follow the marked footpath to the keeper, then return to the light tower.",
+            "https://www.gtaboom.com/gta-6-repair-the-lantern-walkthrough-50a8", PUBLISHED, None,
+        ), [LANDMARK])
+        self.assertEqual(named_part["missionName"], "Repair the Lantern")
+        self.assertIsNone(make_report(source, (
+            "GTA 6 Unrelated Walkthrough", "Follow the map to find a prize and get a ride.",
+            "https://www.gtaboom.com/review-trailer-ffff", PUBLISHED, None,
+        ), [LANDMARK]))
+        row = make_report(source, (
+            "GTA 6 All Collectible Locations Walkthrough",
+            "Find and collect the first item at Synthetic Harbor. There are more picks around the county.",
+            "https://www.gtaboom.com/collectibles", PUBLISHED, None,
+        ), [LANDMARK])
+        self.assertEqual(row["category"], "collectible")
+        self.assertIsNone(row["x"])
+
 
 class ProviderTests(unittest.TestCase):
     def test_optional_model_venue_requires_a_literal_report_quote_and_unique_place(self):
@@ -142,7 +210,7 @@ class ProviderTests(unittest.TestCase):
 
     def test_provider_consent_and_separate_key_scope(self):
         config = configure({"kind": "openrouter", "key": "mock-credential"}, Provider())
-        self.assertEqual(config.model, "openrouter/free")
+        self.assertEqual(config.model, "")
         self.assertFalse(config.active)
         self.assertTrue(configure({"kind": "openrouter", "enabled": True}, config).active)
         self.assertFalse(configure({"kind": "ollama-cloud"}, config).key)
@@ -161,7 +229,7 @@ class ProviderTests(unittest.TestCase):
             self.assertIsNone(kwargs["payload"])
             return b'{"models":[{"name":"synthetic"},{"name":"skip-cloud"},{"name":"alias","remote_model":"x"}]}'
 
-        self.assertEqual(list_models(config, fetcher), {"models": ["synthetic"], "selectedAvailable": True})
+        self.assertEqual(list_models(config, fetcher), {"models": ["synthetic"], "selectedAvailable": True, "recommended": None})
 
 
 class LocalApiTests(unittest.TestCase):

@@ -26,3 +26,18 @@ The audit reproduced all 50 mapped overlay positions. Each used at least 20 held
     python -m pip install opencv-python-headless numpy
     python tools/verify_activity_positions.py --download
     python -m unittest discover -s tests -p test_activity_positions.py
+
+## Mission starting markers
+
+The separate mission-positions.json overlay registers **82** selected, published PowerPyx mission markers to the common atlas frame. The current 176-entry catalogue has 17 screenshot-aligned starts in Chapter 1, 14 in Chapter 2, 31 in Chapter 3, and 20 in Chapter 4. The Prologue and Chapter 5 have no included screenshot-derived starts. Individual entries carry the walkthrough, screenshot URL and hash, selected source-image pixel and map registration statistics. [Mission walkthrough index](https://www.powerpyx.com/gta-6-full-walkthrough-all-missions/)
+
+The review checks the selected icon and its title or first location interaction against the walkthrough. Phone calls that reveal a physical start are treated differently from missions that begin during the call or transition. A motel room interaction starts Checking Out after the call. Clock Out begins on acceptance during the call and therefore has no mission-start pin. [Checking Out](https://www.powerpyx.com/gta-6-checking-out-move-to-vice-city-walkthrough/) · [Clock Out](https://www.powerpyx.com/gta-6-clock-out-walkthrough/)
+
+Of the 112 current start-image candidates, 16 lacked sufficient registration evidence and 14 were excluded for ambiguous markers, non-map screenshots, grouped activities, or later objectives. The remaining 64 catalogue records have no eligible start image. This includes 31 starts classified as automatic, remote, or unmarked. Existing independently linked venue pins are separate from this count.
+
+At least 19 held-out features support every included alignment. The largest held-out 90th-percentile residual was 2.46 pixels in the pinned in-game reference. The measure describes image alignment. The pin selects the in-game marker; an interior start or trigger may require following the walkthrough after arrival. The distributed files include only derived coordinates and source metadata. Audit images stay in the ignored local cache.
+
+    python tools/install_local_maps.py --layer game
+    python -m pip install opencv-python-headless numpy
+    python tools/verify_mission_positions.py --download
+    python -m unittest discover -s tests -p test_mission_positions.py

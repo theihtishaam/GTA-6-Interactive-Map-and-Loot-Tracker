@@ -2,21 +2,28 @@
 
 import json
 import mimetypes
+import os
+import socket
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from threading import Condition, Thread
+from threading import Condition
 from urllib.parse import parse_qs, unquote, urlsplit
+from uuid import uuid4
 
 from bounty_watch import BOUNTY_SOURCES, discover_bounties, merge_bounty_reports
 from discovery import SOURCES, discover, iso_date, load_landmarks
 from gps import GpsUnavailable, LOCATE_BODY_LIMIT, ScreenshotLocator, frame_coordinates
-from providers import Provider, add_source_steps, configure, list_models
+from providers import CatalogueUnavailable, Provider, add_source_steps, check_access, configure, list_models
 from media_cache import MediaCache
+from mission_watch import SOURCE as MISSION_INDEX, discover_index
+from report_verification import review_reports
 import votes
 
 ROOT = Path(__file__).resolve().parent
+DATA_ROOT = Path(os.environ.get("GTA6_LOOT_MAP_DATA") or ROOT / ".atlas").expanduser().resolve()
+VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 PUBLIC = ROOT / "public"
 PORT = 8765
 BODY_LIMIT = 4096
@@ -40,9 +47,10 @@ def utcnow():
 
 
 class Atlas:
-    def __init__(self, cache=ROOT / ".atlas" / "state.json", public=PUBLIC, discovery=discover,
+    def __init__(self, cache=DATA_ROOT / "state.json", public=PUBLIC, discovery=discover,
                  bounty_discovery=discover_bounties):
         self.cache = cache
+        self.instance = uuid4().hex
         self.public = public
         self.discovery = discovery
         self.bounty_discovery = bounty_discovery
@@ -52,7 +60,7 @@ class Atlas:
         self.stopping = False
         self.interval = 24
         self.reports = []
-        self.sources = [source.health() for source in SOURCES]
+        self.sources = [source.health() for source in (*SOURCES, MISSION_INDEX)]
         self.last_run = None
         self.provider = Provider()
         self.provider_status = None
@@ -61,6 +69,7 @@ class Atlas:
         self.locator = ScreenshotLocator(self.public, self.cache.parent)
         self.media = MediaCache(self.cache.parent / "evidence-images", self.public)
         self.bounty_reports = []
+        self._review_inputs = None
         self.bounty_sources = [source.health() for source in BOUNTY_SOURCES]
         self.bounty_interval = 24
         self.bounty_last_run = None
@@ -142,11 +151,23 @@ class Atlas:
         except OSError:
             self.cache_error = "The discovery cache could not be saved."
 
+    def _reviewed(self):
+        # Both watches contribute evidence and replace their raw lists after each scan.
+        inputs = self._review_inputs
+        if inputs is None or self.reports is not inputs[0] or self.bounty_reports is not inputs[1]:
+            rows = review_reports([*self.reports, *self.bounty_reports])
+            for row in rows:
+                row.pop("verificationExcerpt", None)
+                row.pop("_extract", None)
+            self._review_inputs = (self.reports, self.bounty_reports)
+            self._review_output = (rows[:len(self.reports)], rows[len(self.reports):])
+        return self._review_output
+
     def state(self):
         with self.change:
             return {
-                "version": "0.1.0",
-                "reports": self.reports, "sources": self.sources, "interval": self.interval,
+                "version": VERSION, "instance": self.instance,
+                "reports": self._reviewed()[0], "sources": self.sources, "interval": self.interval,
                 "running": self.running or self.requested,
                 "lastRun": self.last_run.isoformat() if self.last_run else None,
                 "nextRun": self.next_run.isoformat(),
@@ -158,7 +179,7 @@ class Atlas:
     def bounty_state(self):
         with self.change:
             return {
-                "reports": self.bounty_reports, "sources": self.bounty_sources,
+                "reports": self._reviewed()[1], "sources": self.bounty_sources,
                 "interval": self.bounty_interval, "running": self.bounty_running or self.bounty_requested,
                 "lastRun": self.bounty_last_run.isoformat() if self.bounty_last_run else None,
                 "nextRun": self.bounty_next_run.isoformat(), "cacheError": self.cache_error,
@@ -199,15 +220,61 @@ class Atlas:
             return self.bounty_state()
 
     def set_provider(self, values):
+        initial = values.get("startDiscovery", False)
+        if type(initial) is not bool:
+            raise ValueError("Initial discovery must be true or false.")
         with self.change:
-            self.provider = configure(values, self.provider)
-            self.provider_status = None
+            before = self.provider
+        inventory = None
+        if values.get("enabled") is True and "model" not in values:
+            probe = configure(values, before, probe=True)
+            if probe.kind != "none" and (probe.kind != before.kind or probe.base != before.base or not before.model):
+                inventory = list_models(probe)
+                default = inventory.get("recommended")
+                if not default:
+                    raise ValueError("Choose an available model from this provider’s catalogue.")
+                values = {**values, "model": default}
+        config = configure(values, before)
+        start = initial and config.active and config != before
+        status = None
+        if start:
+            check = check_access(config)
+            manual = values.get("manualModel") is True and config.kind in ("custom", "opencode")
+            try:
+                available = config.model in inventory["models"] if inventory is not None else list_models(config)["selectedAvailable"]
+                if not manual and not available:
+                    raise ValueError("The selected model is outside the current catalogue. Refresh and choose an available model.")
+            except CatalogueUnavailable as exc:
+                if not manual or not exc.unsupported:
+                    raise
+                # An explicit manual connection can still run on its scheduled refresh.
+                # Without an answering catalogue there is no setup check to trigger a scan.
+                start = False
+            status = {
+                "verified": "Provider confirmed the key. Initial discovery requested.",
+                "local": "Installed model found. Initial discovery requested.",
+                "catalogue-only": ("Model catalogue unsupported. Manual model saved for the next scheduled enrichment."
+                                   if not start else "Catalogue checked. Model access will be checked on first enrichment."),
+            }[check]
+        with self.change:
+            if self.provider != before and self.provider != config:
+                raise ValueError("Provider settings changed during the check. Reopen Settings and try again.")
+            newly_active = start and self.provider != config
+            if self.provider != config:
+                self.provider = config
+                self.provider_status = status
             self._save()
-            return self.state()
+            if newly_active:
+                self.requested = True
+                self.change.notify_all()
+            return {**self.state(), "initialDiscovery": bool(newly_active)}
 
     def model_list(self, values):
         with self.change:
             config = configure(values, self.provider, probe=True)
+        if values.get("checkAccess") is True:
+            verified = check_access(config)
+            return {**list_models(config), "keyStatus": verified}
         return list_models(config)
 
     def refresh(self):
@@ -240,6 +307,8 @@ class Atlas:
             try:
                 landmarks = load_landmarks(self.public / "landmarks.json")
                 sources, reports = self.discovery(landmarks)
+                if self.stopping:
+                    return
                 if self.discovery is discover:
                     from resource_discovery import discover_resources
                     previous = [s for s in self.sources if s["id"].startswith("auto-")]
@@ -249,13 +318,26 @@ class Atlas:
                         reports = [*reports, *extra]
                     except (ValueError, OSError, RuntimeError):
                         sources = [*sources, *[{**s, "status":"error", "error":"Source search unavailable."} for s in previous]]
+                    if self.stopping:
+                        return
+                    try:
+                        missions = json.loads((self.public / "missions.json").read_text(encoding="utf-8"))
+                        health, new_missions = discover_index(missions, self.reports, landmarks)
+                        sources.append(health)
+                        reports.extend(new_missions)
+                    except (OSError, ValueError):
+                        sources.append({**MISSION_INDEX.health(), "status":"error", "error":"Mission catalogue unavailable."})
                 candidates = [row for row in reports if row.get("_extract") and
                               (row["id"] not in known_versions or known_versions[row["id"]] != row.get("sourceDigest"))]
                 status = None
+                if self.stopping:
+                    return
                 if config.active and candidates:
                     status = add_source_steps(config, candidates[0], landmarks=landmarks)
                 for row in reports:
-                    row.pop("_extract", None)
+                    excerpt = row.pop("_extract", None)
+                    if excerpt:
+                        row["verificationExcerpt"] = excerpt[:800]
                 with self.change:
                     self._merge(reports)
                     self.sources = sources
@@ -279,12 +361,15 @@ class Atlas:
                     self.last_run = utcnow()
                     self.next_run = self.last_run + timedelta(hours=self.interval)
                     self.running = False
-                    self._save()
+                    if not self.stopping:
+                        self._save()
 
     def _merge(self, reports):
         by_url = {row["id"]: row for row in self.reports}
         for row in reports:
             earlier = by_url.get(row["id"])
+            if earlier and earlier.get("indexChecked"):
+                row["indexChecked"] = True
             if earlier and row.get("sourceDigest") == earlier.get("sourceDigest"):
                 if not row["steps"]:
                     row["steps"] = earlier.get("steps", [])
@@ -322,7 +407,8 @@ class Atlas:
                     self.bounty_last_run = utcnow()
                     self.bounty_next_run = self.bounty_last_run + timedelta(hours=self.bounty_interval)
                     self.bounty_running = False
-                    self._save()
+                    if not self.stopping:
+                        self._save()
 
     def stop(self):
         with self.change:
@@ -403,6 +489,8 @@ class Handler(BaseHTTPRequestHandler):
         path = self._path()
         if path == "/api/state":
             self._json(HTTPStatus.OK, self.atlas.state())
+        elif path == "/api/launcher":
+            self._json(HTTPStatus.OK, {"app": "gta6-loot-map", "instance": self.atlas.instance, "version": VERSION})
         elif path == "/api/bounty/state":
             self._json(HTTPStatus.OK, self.atlas.bounty_state())
         elif path == "/api/media":
@@ -482,6 +570,19 @@ class Handler(BaseHTTPRequestHandler):
             self._json(HTTPStatus.FORBIDDEN, {"error": "This request must come from the local atlas."})
             return
         path = self._path()
+        if path == "/api/launcher/stop":
+            try:
+                payload = self._request_json()
+            except ValueError as exc:
+                self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                return
+            if payload.get("instance") != self.atlas.instance:
+                self._json(HTTPStatus.CONFLICT, {"error": "The atlas was restarted. Reload the page before stopping it."})
+                return
+            self._json(HTTPStatus.OK, {"stopping": True})
+            self.atlas.stop()
+            self.server.shutdown()
+            return
         routes = {
             "/api/media": self.atlas.load_media,
             "/api/settings": self.atlas.settings, "/api/provider": self.atlas.set_provider,
@@ -511,6 +612,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 class LocalServer(ThreadingHTTPServer):
+    # Windows SO_REUSEADDR allows a second listener on an occupied endpoint.
+    allow_reuse_address = not hasattr(socket, "SO_EXCLUSIVEADDRUSE")
+
+    def server_bind(self):
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
     def __init__(self, atlas, port=PORT):
         self.atlas = atlas
         super().__init__(("127.0.0.1", port), Handler)
@@ -521,22 +630,9 @@ class LocalServer(ThreadingHTTPServer):
 
 
 def main():
-    atlas = Atlas()
-    with LocalServer(atlas) as server:
-        worker = Thread(target=atlas.worker, daemon=True, name="atlas-discovery")
-        bounty_worker = Thread(target=atlas.bounty_worker, daemon=True, name="atlas-bounty-watch")
-        worker.start()
-        bounty_worker.start()
-        print(f"Leonida Loot Atlas: http://127.0.0.1:{PORT}", flush=True)
-        try:
-            server.serve_forever()
-        except KeyboardInterrupt:
-            pass
-        finally:
-            atlas.stop()
-            worker.join(timeout=2)
-            bounty_worker.join(timeout=2)
+    from launch_atlas import main as launch
+    return launch(["--no-open", "--bundled-only"])
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

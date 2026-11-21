@@ -1,6 +1,7 @@
 """Test the extracted source release with the Python standard library only."""
 import argparse
 from pathlib import Path
+import re
 from subprocess import run
 import sys
 from tempfile import TemporaryDirectory
@@ -9,6 +10,7 @@ from zipfile import ZipFile
 ROOT = Path(__file__).resolve().parents[1]
 SMOKE = """
 import json
+from pathlib import Path
 from threading import Thread
 from urllib.request import ProxyHandler, Request, build_opener
 from server import Atlas, LocalServer
@@ -25,7 +27,7 @@ with LocalServer(atlas, 0) as server:
         origin = 'http://127.0.0.1:' + str(server.server_port)
         opener = build_opener(ProxyHandler({}))
         def get(path): return json.load(opener.open(origin+path, timeout=8))
-        files = ['/','/map.webp','/roads.json','/app.mjs','/field-manual.mjs','/export-center.mjs','/settings.mjs','/map-upgrade.css','/source-view.mjs']
+        files = ['/','/map.webp','/roads.json','/app.mjs','/field-manual.mjs','/export-center.mjs','/settings.mjs','/map-upgrade.css','/source-view.mjs','/missions.mjs','/missions.css','/goals.mjs','/goals.css','/mission-positions.json']
         if '--maps' in sys.argv: files += ['/official-map.jpg','/game-map.png']
         for path in files:
             assert opener.open(Request(origin+path,method='HEAD'),timeout=8).status == 200,path
@@ -34,9 +36,13 @@ with LocalServer(atlas, 0) as server:
         for r in get('/collectible-guides.json'): rows[r['id']] = r
         assert len(rows) == 76 and all(0 <= r['x'] <= 1 and 0 <= r['y'] <= 1 for r in rows.values())
         assert len(get('/landmarks.json')) == 3663
-        assert get('/api/state')['version'] == '0.1.0'
+        missions = get('/missions.json')
+        ids = {m['id'] for m in missions}
+        assert len(ids) == len(missions) and len(missions) >= 150
+        assert set(get('/mission-positions.json')) <= ids
+        assert get('/api/state')['version'] == Path('VERSION').read_text().strip()
         assert get('/api/bounty/state')['interval'] == 24
-        print('Clean archive served 76 positioned guides, 3,663 landmarks, 0.1.0 API and all selected map layers.')
+        print(f"Clean archive served 76 positioned activity guides, {len(missions)} mission builds, 3,663 landmarks and all selected map layers.")
     finally:
         server.shutdown()
         worker.join()
@@ -56,8 +62,19 @@ def main():
             assert set(p.parts).isdisjoint({".git",".atlas",".gtadb-import","release","test-results","__pycache__"})
             assert p.suffix.lower() not in {".jpg",".jpeg",".png",".sqlite",".sqlite3",".db",".env"}
         package.extractall(folder)
+        project = Path(folder) / "Leonida-Loot-Atlas"
+        readme = (project / "README.md").read_text(encoding="utf-8")
+        version = (project / "VERSION").read_text(encoding="utf-8").strip()
+        image_root = f"https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v{version}/"
+        images = re.findall(r"!\[[^\]]*\]\(([^)]+)\)", readme)
+        assert len(images) >= 8
+        for image in images:
+            assert image.startswith(image_root + "docs/"), image
+            assert (project / image.removeprefix(image_root)).is_file(), image
+        assert all((project / name).is_file() for name in ("Start Atlas.cmd", "Stop Atlas.cmd", "tools/WindowsLauncher.ps1"))
+        run([sys.executable, "-S", "app.py", "--status"], cwd=project, check=True, timeout=12)
         command = [sys.executable, "-S", "-c", SMOKE] + (["--maps"] if args.maps else [])
-        run(command, cwd=Path(folder) / "Leonida-Loot-Atlas", check=True, timeout=105)
+        run(command, cwd=project, check=True, timeout=105)
 
 
 if __name__ == "__main__":

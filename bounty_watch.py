@@ -194,7 +194,7 @@ def bounty_report(source, item, landmarks):
     report["category"] = "bounty"
     report["platform"] = source.platform
     report["watchStatus"] = "source claim"
-    report.pop("_extract", None)
+    report["verificationExcerpt"] = report.pop("_extract", "")[:800]
     # Exact substantive copies may appear across networks. Keep provenance for each linked copy.
     echo = " ".join(re.findall(r"\w+", excerpt.casefold()))
     if len(echo) > 110:

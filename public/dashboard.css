@@ -54,3 +54,7 @@ body {display:grid; grid-template-rows:auto minmax(0,1fr) auto; height:100vh; he
 @media(max-width:650px){.world{position:relative;}#index{top:0;bottom:0;}}
 @media(max-width:520px){.creator-footer{flex-wrap:wrap;justify-content:center;column-gap:10px;row-gap:0;padding-block:3px;}.creator-links{gap:13px;}.creator-links a{padding-block:4px;}.creator-footer>span{text-align:center;}}
 
+.claim-check { margin: 1rem 0; padding: .8rem 1rem; border-left: 3px solid #79b7de; background: rgba(94,150,180,.10); border-radius: 4px; }
+.claim-check[data-status="corroborated"] { border-color: #69d9b0; }
+.claim-check[data-status="review"] { border-color: #ffad75; }
+.claim-check p { margin: .4rem 0; line-height: 1.45; }

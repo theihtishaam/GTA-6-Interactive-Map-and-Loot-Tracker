@@ -1,0 +1,24 @@
+{
+  "name": "gta6-loot-map",
+  "version": "0.1.1",
+  "description": "GTA 6 Loot Map by theihtishaam. Explore Leonida, find loot and collectibles, plan GPS routes, and track community discoveries.",
+  "license": "MIT",
+  "author": "The Ihtisham (https://github.com/theihtishaam)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker.git"
+  },
+  "bugs": {"url": "https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/issues"},
+  "homepage": "https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker#readme",
+  "bin": {"gta6-loot-map": "bin/gta6-loot-map.mjs"},
+  "engines": {"node": ">=22"},
+  "keywords": ["gta6", "gta-vi", "interactive-map", "loot-tracker", "leonida", "collectibles", "ollama"],
+  "files": [
+    "bin/*.mjs", "VERSION", "app.py", "launch_atlas.py", "server.py", "discovery.py",
+    "bounty_watch.py", "mission_watch.py", "media_cache.py", "resource_discovery.py", "report_verification.py", "providers.py", "votes.py",
+    "gps.py", "community_votes.py", "public/", "docs/", "tools/WindowsLauncher.ps1",
+    "tools/install_local_maps.py", "tools/import_gtadb.py", "tools/gtadb-day-tiles.sha256",
+    "tools/gtadb-tiles.sha256", "Start Atlas.cmd", "Stop Atlas.cmd"
+  ],
+  "publishConfig": {"access": "public", "registry": "https://registry.npmjs.org/"}
+}

@@ -36,6 +36,7 @@ class ResourceTests(unittest.TestCase):
             ("GTA VI Headphones Locations", FRESH, A, "Games Example"),
             ("GTA 6 Collectible Locations", FRESH, B, "Guides Example"),
             ("GTA 6 Hidden Rewards Locations", FRESH, "https://www.gamesradar.com", "Existing Source"),
+            ("GTA 6 Story Mission Walkthrough", FRESH, "https://www.gtaboom.com", "Existing Fixed Guide"),
             ("GTA 6 Rumored Collectibles", FRESH, "https://rumor.example", "Rumor"),
             ("GTA 6 Earbuds Locations", FRESH, "https://127.0.0.1/", "Invalid"),
         ])
@@ -84,8 +85,8 @@ class ResourceTests(unittest.TestCase):
         ])
         self.assertTrue(all(row.get("sourceId") and row.get("discoveredVia") for row in reports))
         self.assertFalse(any(site in url for url in calls
-                             for site in ("gamesradar", "rumor.example", "127.0.0.1", "comments/feed")))
-        self.assertEqual(sum(url.startswith("https://news.google.com") for url in calls), 2)
+                             for site in ("gamesradar", "gtaboom", "rumor.example", "127.0.0.1", "comments/feed")))
+        self.assertEqual(sum(url.startswith("https://news.google.com") for url in calls), 3)
 
     def test_retains_qualified_feeds_during_search_outage(self):
         normal, _ = self.fixture()
@@ -95,7 +96,33 @@ class ResourceTests(unittest.TestCase):
         self.assertIn(A + "atlas-feed", calls)
         self.assertNotIn(A, calls)
         self.assertEqual(len(reports), 3)
-        self.assertEqual(sum(row["status"] == "error" for row in rows), 2)
+        self.assertEqual(sum(row["status"] == "error" for row in rows), 3)
+
+    def test_mission_query_discovers_own_publisher_walkthrough(self):
+        from urllib.parse import parse_qs, urlsplit
+
+        def fetch(url, **unused):
+            if url.startswith("https://news.google.com"):
+                query = parse_qs(urlsplit(url).query)["q"][0]
+                rows = [("GTA VI Moonlight Shift Walkthrough", FRESH, A, "Example")] if '"story mission"' in query else []
+                return PublicResponse(url, index_snapshot(rows))
+            if url == A:
+                return PublicResponse(url, b'<link rel="alternate" type="application/rss+xml" href="/missions">')
+            return PublicResponse(url, (
+                f"<rss><channel><item><title>GTA VI Moonlight Shift Walkthrough</title>"
+                f"<description>Moonlight Shift is a main mission. Follow the signs to meet the foreman.</description>"
+                f"<link>{A}moonlight</link><pubDate>{format_datetime(FRESH)}</pubDate></item>"
+                "<item><title>GTA VI Full Walkthrough: All Missions</title>"
+                f"<description>Find every main mission and side quest.</description><link>{A}all</link>"
+                f"<pubDate>{format_datetime(FRESH)}</pubDate></item></channel></rss>"
+            ).encode())
+
+        rows, reports = discover_resources([], now=NOW, fetcher=fetch)
+        report, = reports
+        self.assertEqual(report["category"], "mission")
+        self.assertEqual(report["source"], A + "moonlight")
+        self.assertEqual(report["confidence"], "lead")
+        self.assertEqual(rows[0]["byCategory"], {"mission": 1})
         self.assertNotIn("private diagnostic", str(rows))
 
     def test_health_for_unreadable_feed(self):
