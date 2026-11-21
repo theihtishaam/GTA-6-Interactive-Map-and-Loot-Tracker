@@ -48,7 +48,7 @@ with TemporaryDirectory(prefix="GTA map player setup ") as folder:
                 except (ValueError,OSError): pass
                 sleep(.2)
             else: raise RuntimeError(log_file.read_text(errors='replace'))
-            assert api['version']=='0.1.1'
+            assert api['version'] == (project/'VERSION').read_text().strip()
             with opener.open(f"http://127.0.0.1:{sess['port']}/",timeout=4) as r: assert b'GTA 6 Loot Map' in r.read()
             stop()
             assert proc.wait(timeout=10)==0

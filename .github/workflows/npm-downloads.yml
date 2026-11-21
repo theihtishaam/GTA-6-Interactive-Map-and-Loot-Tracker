@@ -1,0 +1,37 @@
+name: Refresh lifetime npm downloads
+on:
+  schedule:
+    - cron: '43 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: npm-download-badge
+
+jobs:
+  badge:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          sparse-checkout: tools
+      - uses: actions/checkout@v6
+        with:
+          ref: download-stats
+          path: stats
+          sparse-checkout: .github/badges
+      - run: python3 tools/npm_download_badge.py stats/.github/badges/npm-downloads.json
+      - name: Publish a changed count
+        working-directory: stats
+        run: |
+          git add .github/badges/npm-downloads.json
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m "Update lifetime npm downloads"
+            git push origin HEAD:refs/heads/download-stats
+          fi

@@ -17,7 +17,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 from xml.etree import ElementTree
 
-USER_AGENT = "GTA6MapLoot/0.1.1 (https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker)"
+USER_AGENT = "GTA6MapLoot/0.1.2 (https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker)"
 LAUNCH = datetime(2026, 11, 19, tzinfo=timezone.utc)
 REVIEW_EMBARGO = LAUNCH.replace(day=18)
 LIMIT = 35

@@ -67,8 +67,15 @@ def main():
         version = (project / "VERSION").read_text(encoding="utf-8").strip()
         image_root = f"https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v{version}/"
         images = re.findall(r"!\[[^\]]*\]\(([^)]+)\)", readme)
-        assert len(images) >= 8
-        for image in images:
+        badges = re.findall(r"\[!\[([^\]]+)\]\((https://img\.shields\.io/[^)]+)\)\]\((https://[^)]+)\)", readme)
+        assert {label: target for label, _, target in badges} == {
+            "Total npm downloads": "https://npm-stat.com/charts.html?package=gta6-loot-map&from=2026-11-21",
+            "GitHub profile of @theihtishaam": "https://github.com/theihtishaam",
+            "GTA 6 – Leonida": "https://www.rockstargames.com/VI/",
+        }
+        artwork = [image for image in images if image not in {url for _, url, _ in badges}]
+        assert len(artwork) >= 8
+        for image in artwork:
             assert image.startswith(image_root + "docs/"), image
             assert (project / image.removeprefix(image_root)).is_file(), image
         assert all((project / name).is_file() for name in ("Start Atlas.cmd", "Stop Atlas.cmd", "tools/WindowsLauncher.ps1"))
