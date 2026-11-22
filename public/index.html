@@ -174,14 +174,44 @@
     </main>
     <main id="sheet" class="sheet" hidden><div id="sheet-content"></div></main>
     <footer class="creator-footer">
-      <span>Built by <a href="https://github.com/theihtishaam" aria-label="The Ihtisham · @theihtishaam on GitHub" rel="noreferrer" target="_blank"><strong>The Ihtisham</strong> <span class="creator-handle">@theihtishaam</span></a> <small>· v0.1.3</small></span>
-      <nav class="creator-links" aria-label="Creator profiles and repository">
-        <a href="https://github.com/theihtishaam" target="_blank" rel="noreferrer">GitHub profile</a>
+      <div class="creator-meta">
+        <span>Built by <a href="https://github.com/theihtishaam" aria-label="The Ihtisham · @theihtishaam on GitHub" rel="noreferrer" target="_blank"><strong>The Ihtisham</strong> <span class="creator-handle">@theihtishaam</span></a> <small>· v0.1.4</small></span>
         <a href="https://www.linkedin.com/in/ihtishamdeveloper/" target="_blank" rel="noreferrer">LinkedIn</a>
-        <a class="github-star" href="https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker" target="_blank" rel="noreferrer" title="Star GTA 6 Loot Map on GitHub"><i data-icon="collectible"></i>Star on GitHub</a>
+        <a id="creator-feedback" href="https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/issues/new?title=Player%20feedback&amp;body=What%20worked%20well%20for%20you%3F%0A%0AWhat%20could%20make%20the%20map%20better%3F%0A" target="_blank" rel="noreferrer">Give feedback</a>
+      </div>
+      <nav class="github-actions" aria-label="Support the project on GitHub">
+        <a class="github-star" href="https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker" target="_blank" rel="noreferrer" title="Star GTA 6 Loot Map on GitHub"><i data-icon="collectible"></i>Give a star</a>
+        <a class="github-follow" href="https://github.com/theihtishaam" target="_blank" rel="noreferrer" title="Follow @theihtishaam on GitHub"><i data-icon="follow"></i>Follow on GitHub</a>
       </nav>
     </footer>
-    <dialog id="dialog">
+    <dialog id="welcome" aria-labelledby="welcome-title">
+      <div class="welcome-art">
+        <img id="welcome-cover" width="1600" height="533" alt="Two travelers plan a route by the Leonida waterfront at sunset.">
+        <button id="welcome-close" class="icon-button" aria-label="Dismiss welcome"><i data-icon="x"></i></button>
+      </div>
+      <div class="welcome-body">
+        <h2 id="welcome-title">Welcome to Leonida</h2>
+        <div class="welcome-byline">
+          <span>Built by <a href="https://github.com/theihtishaam" target="_blank" rel="noreferrer">@theihtishaam</a></span>
+          <a id="welcome-feedback" target="_blank" rel="noreferrer">Give feedback <i data-icon="external"></i></a>
+        </div>
+        <nav class="github-actions" aria-label="Support the project on GitHub">
+          <a class="github-star" href="https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker" target="_blank" rel="noreferrer" title="Star GTA 6 Loot Map on GitHub"><i data-icon="collectible"></i>Give a star</a>
+          <a class="github-follow" href="https://github.com/theihtishaam" target="_blank" rel="noreferrer" title="Follow @theihtishaam on GitHub"><i data-icon="follow"></i>Follow on GitHub</a>
+        </nav>
+        <div class="welcome-discovery">
+          <span class="discovery-map" aria-hidden="true"><b>24h</b></span>
+          <div><h3>Daily discoveries</h3>
+            <p>While the atlas runs, it checks for bounties, rewards and mission guides every 24 hours by default. Connect Ollama to turn a new report into source-backed steps.</p>
+          </div>
+        </div>
+        <div class="welcome-actions">
+          <button id="welcome-explore" class="primary" autofocus>Explore the map <i data-icon="arrow"></i></button>
+          <button id="welcome-ollama" class="action">Set up Ollama</button>
+        </div>
+      </div>
+    </dialog>
+    <dialog id="dialog" aria-labelledby="dialog-title">
       <div class="dialog-bar">
         <h2 id="dialog-title"></h2>
         <button id="dialog-close" class="icon-button" aria-label="Close dialog">

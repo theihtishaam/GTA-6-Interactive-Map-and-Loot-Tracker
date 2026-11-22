@@ -59,6 +59,7 @@ class Atlas:
         self.requested = False
         self.stopping = False
         self.interval = 24
+        self.welcome_seen = False
         self.reports = []
         self.sources = [source.health() for source in (*SOURCES, MISSION_INDEX)]
         self.last_run = None
@@ -95,6 +96,8 @@ class Atlas:
                 if isinstance(row, dict) and all(key in row for key in ("id", "title", "publishedAt", "category"))
             ]
             self.interval = interval
+            # An older saved installation already had its first run.
+            self.welcome_seen = data.get("welcomeSeen", True) is True
             self.last_run = iso_date(data.get("lastRun"))
             self._load_bounty(data.get("bounty"))
             preferences = data.get("providerPreferences")
@@ -137,6 +140,7 @@ class Atlas:
         try:
             self.cache.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps({
+                "welcomeSeen": self.welcome_seen,
                 "interval": self.interval, "reports": self.reports, "sources": self.sources,
                 "lastRun": self.last_run.isoformat() if self.last_run else None,
                 "bounty": {"interval": self.bounty_interval, "reports": self.bounty_reports,
@@ -150,6 +154,17 @@ class Atlas:
             self.cache_error = None
         except OSError:
             self.cache_error = "The discovery cache could not be saved."
+
+    def claim_welcome(self, _):
+        with self.change:
+            if self.welcome_seen:
+                return {"show": False}
+            self.welcome_seen = True
+            self._save()
+            if self.cache_error:
+                self.welcome_seen = False
+                return {"show": False}
+            return {"show": True}
 
     def _reviewed(self):
         # Both watches contribute evidence and replace their raw lists after each scan.
@@ -167,6 +182,7 @@ class Atlas:
         with self.change:
             return {
                 "version": VERSION, "instance": self.instance,
+                "welcomePending": not self.welcome_seen,
                 "reports": self._reviewed()[0], "sources": self.sources, "interval": self.interval,
                 "running": self.running or self.requested,
                 "lastRun": self.last_run.isoformat() if self.last_run else None,
@@ -532,6 +548,8 @@ class Handler(BaseHTTPRequestHandler):
             file = (root / (name.lstrip("/") or "index.html")).resolve()
             if not file.is_relative_to(root) or name.startswith("//"):
                 raise FileNotFoundError
+            if name == "/welcome-cover.webp":
+                file = ROOT / "docs" / "quickstart" / "cover.webp"
             if name in MAP_ASSETS and not file.is_file():
                 asset_dir = self.atlas.cache.parent.resolve()
                 file = (asset_dir / MAP_ASSETS[name]).resolve()
@@ -584,6 +602,7 @@ class Handler(BaseHTTPRequestHandler):
             self.server.shutdown()
             return
         routes = {
+            "/api/welcome/claim": self.atlas.claim_welcome,
             "/api/media": self.atlas.load_media,
             "/api/settings": self.atlas.settings, "/api/provider": self.atlas.set_provider,
             "/api/provider/models": self.atlas.model_list, "/api/refresh": lambda _: self.atlas.refresh(),

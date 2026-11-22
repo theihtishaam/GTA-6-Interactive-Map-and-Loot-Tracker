@@ -106,6 +106,7 @@ if __name__ == "__main__":
         root = Path(workspace)
         atlas = Atlas(cache=root / "state.json")
         with LocalServer(atlas, 0) as server:
+            server.atlas.welcome_seen = True  # Returning player.
             thread = Thread(target=server.serve_forever, daemon=True)
             thread.start()
             browser = driver.chromium.launch(channel="chrome", headless=True)

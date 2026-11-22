@@ -52,6 +52,7 @@ def browser_check(browser, width, height):
     with TemporaryDirectory(prefix="atlas-provider-test-") as folder, patch("server.list_models", fixture), patch("server.check_access", check_access):
         app = Atlas(cache=Path(folder)/"state.json")
         with LocalServer(app, 0) as server:
+            server.atlas.welcome_seen = True  # Returning player.
             thread = Thread(target=server.serve_forever, daemon=True)
             thread.start()
             base = f"http://127.0.0.1:{server.server_port}"

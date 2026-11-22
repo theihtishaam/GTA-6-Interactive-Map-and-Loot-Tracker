@@ -203,6 +203,7 @@ def main():
         app = Atlas(cache=Path(work) / "state.json", discovery=lambda rows: synthetic_snapshot(phase, rows))
         app.next_run = utcnow() + timedelta(days=1)
         with LocalServer(app, 0) as server:
+            server.atlas.welcome_seen = True  # Returning player.
             threads = [Thread(target=server.serve_forever, daemon=True), Thread(target=app.worker, daemon=True)]
             for thread in threads:
                 thread.start()

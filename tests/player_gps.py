@@ -23,6 +23,7 @@ def main():
             image.crop((1200, 1300, 2200, 2000)).convert("RGB").save(screenshot, quality=93)
         atlas = Atlas(cache=runtime / "test-state.json")
         with LocalServer(atlas, 0) as server:
+            server.atlas.welcome_seen = True  # Returning player.
             worker = Thread(target=server.serve_forever, daemon=True)
             worker.start()
             try:

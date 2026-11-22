@@ -117,6 +117,7 @@ def main():
             name = MAP_ASSETS["/game-map.png"]
             shutil.copyfile(ROOT / ".atlas" / name, Path(tmp) / name)
         with LocalServer(Atlas(cache=Path(tmp) / "state.json"), 0) as server:
+            server.atlas.welcome_seen = True  # Returning player.
             thread = Thread(target=server.serve_forever, daemon=True)
             thread.start()
             origin = f"http://127.0.0.1:{server.server_port}"

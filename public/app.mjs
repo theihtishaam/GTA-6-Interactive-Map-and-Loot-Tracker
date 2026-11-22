@@ -652,6 +652,36 @@ $("open-journal").onclick = () => switchView("journal");
 $("open-watch").onclick = () => switchView("bounties");
 window.addEventListener("hashchange", () => { if (!loading) switchView(location.hash.slice(1)); });
 $("settings").onclick = () => showSettings(state, open, updateState);
+const welcome = $("welcome");
+$("welcome-feedback").href = $("creator-feedback").href;
+$("welcome-close").onclick = () => welcome.close();
+$("welcome-explore").onclick = () => {
+  welcome.close();
+  switchView("map");
+};
+$("welcome-ollama").onclick = () => {
+  welcome.close();
+  $("settings").click();
+};
+welcome.addEventListener("close", () => {
+  if (!$("dialog").open) document.querySelector(".top nav .active")?.focus();
+});
+async function welcomeOnFirstVisit() {
+  if (document.hidden) {
+    document.addEventListener("visibilitychange", welcomeOnFirstVisit, {once: true});
+    return;
+  }
+  if ($("dialog").open) return;
+  try {
+    const {show} = await post("/api/welcome/claim", {});
+    if (show && !$("dialog").open) {
+      $("welcome-cover").src = "/welcome-cover.webp";
+      welcome.showModal();
+    }
+  } catch {
+    // A failed first-run check must leave the map usable.
+  }
+}
 function goalsView() {
   renderGoals($("sheet-content"), {
     catalog, done: checklist(), origin: route().origin, openEntry: row => hasMissionBuild(row) ? openBuild(row) : reveal(row),
@@ -1339,6 +1369,7 @@ function setAppearance(k, s) {
 }
 $("style-toggle").onclick = styles;
 document.addEventListener("keydown", (e) => {
+  if (welcome.open) return;
   if (e.key === "Escape") {
     if (placement) stopPlace();
     else if (!$("dialog").open) {
@@ -1413,6 +1444,7 @@ async function boot() {
   saveRoute(false, false);
   updateRouteStatus();
   let lastPoll = Date.now();
+  if (st.welcomePending) welcomeOnFirstVisit();
   const poll = async () => {
     if (document.hidden || polling) return;
     polling = true;

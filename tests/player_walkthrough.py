@@ -170,6 +170,7 @@ def main():
                 shutil.copyfile(ROOT / ".atlas" / filename, Path(temporary) / filename)
         app = Atlas(cache=Path(temporary) / "state.json")
         with LocalServer(app, 0) as server:
+            server.atlas.welcome_seen = True  # Returning player.
             thread = Thread(target=server.serve_forever, daemon=True)
             thread.start()
             origin = f"http://127.0.0.1:{server.server_port}"

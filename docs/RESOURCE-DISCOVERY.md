@@ -9,6 +9,8 @@ The atlas checks a fixed set of public publisher and community feeds. It also ru
 | PowerPyx | Targeted RSS searches for individual walkthroughs, bank vaults, collectible cards, electronics stores and equipment. |
 | GTA BOOM | The publisher’s RSS feed provides mission and loot descriptions. The separately browsable mission index is a reference. |
 | Push Square | The PlayStation guide RSS feed, screened for GTA VI gameplay. |
+| Video Games Chronicle | The publisher’s guide feed includes GTA VI safe locations, mission objectives and equipment unlocks. [VGC guide feed](https://www.videogameschronicle.com/category/guide/feed/) |
+| Destructoid | Its GTA 6 tag feed includes secrets and collectible unlocks. Entries pass the same gameplay and source evidence checks as the other feeds. [Destructoid GTA 6 feed](https://www.destructoid.com/tag/gta-6/feed/) |
 | GTA6 Collectibles Map | RSS entries for collectibles, rewards and related research leads. Derivative or broad guides still need separate in-game evidence before assigning a precise location. |
 | Other fixed feeds | GitHub public issues, GTA Forums at gta.how, GTA6.how, GamesRadar+ and PC Gamer. |
 

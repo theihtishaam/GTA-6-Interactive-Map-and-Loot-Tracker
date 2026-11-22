@@ -15,7 +15,9 @@ export function showSettings(state, open, update) {
       current.kind && current.kind !== "none" ? current.kind : "ollama-cloud";
   open(
     "Settings",
-    '<div><h3>Connect an optional model</h3><p class="hint">The atlas runs free without AI. An enabled model can enrich one new public report per scan.</p>' +
+    '<div><div class="model-discovery"><span class="discovery-map" aria-hidden="true"><b>' +
+      ([6, 12, 24].includes(state.interval) ? state.interval : 24) +
+      'h</b></span><div><h3>Connect an optional model</h3><p class="hint">The atlas checks public guides while the server runs. Ollama can turn one new or updated report per scan into steps backed by its source. Bounty Watch also runs without a model.</p></div></div>' +
       '<label class="form-field" id="key-field"><span>API key · kept in server memory until restart</span><input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter a key on this computer" aria-describedby="key-route"></label>' +
       '<p class="hint" id="key-route" role="status"></p>' +
       '<label class="form-field"><span>Service for this key or local model</span><select id="provider"><option value="">Choose the service that issued this key…</option>' +

@@ -17,7 +17,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 from xml.etree import ElementTree
 
-USER_AGENT = "GTA6MapLoot/0.1.3 (https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker)"
+USER_AGENT = "GTA6MapLoot/0.1.4 (https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker)"
 LAUNCH = datetime(2026, 11, 19, tzinfo=timezone.utc)
 REVIEW_EMBARGO = LAUNCH.replace(day=18)
 LIMIT = 35
@@ -174,6 +174,10 @@ SOURCES = (
            coverage="Publisher RSS for mission walkthroughs, collectibles and other leads."),
     Source("pushsquare", "Push Square guides", "https://www.pushsquare.com/feeds/guides", launch_guides=True,
            coverage="Published PlayStation guides, screened for GTA VI gameplay."),
+    Source("vgc-guides", "VGC guides", "https://www.videogameschronicle.com/category/guide/feed/",
+           launch_guides=True, coverage="Publisher walkthroughs for mission objectives, locked locations and rewards."),
+    Source("destructoid-gta6", "Destructoid GTA 6", "https://www.destructoid.com/tag/gta-6/feed/",
+           launch_guides=True, coverage="GTA 6 tag feed screened for activities, unlocks and collectible guides."),
     Source("collectibles-map", "GTA6 Collectibles Map articles", "https://gta6collectiblesmap.com/feed.xml",
            game_specific=True, coverage="Specialist collectible and reward articles. Broad and derivative coverage stays a lead."),
 )

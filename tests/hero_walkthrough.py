@@ -42,16 +42,16 @@ def measured(a, b):
 def assert_fit(page):
     assert page.locator("body").evaluate("el => el.scrollWidth <= window.innerWidth")
     for selector in (".creator-footer", ".creator-footer strong", ".creator-handle", ".creator-footer small",
-                     ".github-star", "#hero-position", "#route-tools", "#style-toggle"):
+                     ".creator-footer .github-star", ".creator-footer .github-follow", "#hero-position", "#route-tools", "#style-toggle"):
         box = page.locator(selector).bounding_box()
         assert box and box["x"] >= 0 and box["x"] + box["width"] <= page.viewport_size["width"] + 1, selector
         assert box["y"] + box["height"] <= page.viewport_size["height"] + 1, selector
     expect(page.locator(".creator-footer")).to_contain_text("The Ihtisham")
     expect(page.locator(".creator-handle")).to_have_text("@theihtishaam")
-    expect(page.get_by_role("link", name="GitHub profile", exact=True)).to_have_attribute("href", "https://github.com/theihtishaam")
+    expect(page.get_by_role("link", name="Follow on GitHub", exact=True)).to_have_attribute("href", "https://github.com/theihtishaam")
     expect(page.get_by_role("link", name="LinkedIn", exact=True)).to_have_attribute("href", "https://www.linkedin.com/in/ihtishamdeveloper/")
     expect(page.locator(".creator-footer small")).to_have_text(re.compile(r"v\d+\.\d+\.\d+"))
-    expect(page.locator(".github-star")).to_have_attribute(
+    expect(page.locator(".creator-footer .github-star")).to_have_attribute(
         "href", "https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker")
 
 
@@ -234,6 +234,7 @@ def main():
                         return image
                     app.media.fetcher = picture
                     with LocalServer(app, 0) as server:
+                        server.atlas.welcome_seen = True  # Returning player.
                         thread = Thread(target=server.serve_forever, daemon=True)
                         thread.start()
                         base = f"http://127.0.0.1:{server.server_port}"

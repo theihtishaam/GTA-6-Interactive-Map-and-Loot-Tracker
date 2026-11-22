@@ -132,6 +132,7 @@ def main():
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="atlas-manual-") as temporary:
         with LocalServer(Atlas(cache=Path(temporary)/"state.json"), 0) as server:
+            server.atlas.welcome_seen = True  # Returning player.
             thread = Thread(target=server.serve_forever, daemon=True)
             thread.start()
             base = f"http://127.0.0.1:{server.server_port}"

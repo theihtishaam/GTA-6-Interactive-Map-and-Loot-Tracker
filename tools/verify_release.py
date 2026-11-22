@@ -67,10 +67,14 @@ def main():
         version = (project / "VERSION").read_text(encoding="utf-8").strip()
         image_root = f"https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/v{version}/"
         images = re.findall(r"!\[[^\]]*\]\(([^)]+)\)", readme)
-        badges = re.findall(r"\[!\[([^\]]+)\]\((https://img\.shields\.io/[^)]+)\)\]\((https://[^)]+)\)", readme)
-        assert {label: target for label, _, target in badges} == {
-            "Total npm downloads": "https://npm-stat.com/charts.html?package=gta6-loot-map&from=2026-11-21",
-            "GitHub profile of @theihtishaam": "https://github.com/theihtishaam",
+        badges = re.findall(r"\[!\[([^\]]+)\]\((https://[^)]+)\)\]\((https://[^)]+)\)", readme)
+        assert {label: (image, target) for label, image, target in badges} == {
+            "Weekly and lifetime npm downloads for GTA 6 Loot Map": (
+                "https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/download-stats/.github/badges/npm-downloads.svg",
+                "https://www.npmjs.com/package/gta6-loot-map"),
+            "GitHub profile of @theihtishaam": (
+                "https://img.shields.io/badge/GitHub-%40theihtishaam-24292f?logo=github&logoColor=white",
+                "https://github.com/theihtishaam"),
         }
         game_badge = "https://img.shields.io/badge/GTA%206-Leonida-d45485?labelColor=292042"
         assert f"![GTA 6 – Leonida]({game_badge})" in readme.splitlines()
