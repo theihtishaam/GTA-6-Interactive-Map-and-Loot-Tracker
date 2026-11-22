@@ -2,7 +2,7 @@
 
 # GTA 6 Loot Map
 
-[![Total npm downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftheihtishaam%2FGTA-6-Interactive-Map-and-Loot-Tracker%2Fdownload-stats%2F.github%2Fbadges%2Fnpm-downloads.json&logo=npm&logoColor=white)](https://npm-stat.com/charts.html?package=gta6-loot-map&from=2026-11-21)
+[![Weekly and lifetime npm downloads for GTA 6 Loot Map](https://raw.githubusercontent.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker/download-stats/.github/badges/npm-downloads.svg)](https://www.npmjs.com/package/gta6-loot-map)
 [![GitHub profile of @theihtishaam](https://img.shields.io/badge/GitHub-%40theihtishaam-24292f?logo=github&logoColor=white)](https://github.com/theihtishaam)
 ![GTA 6 – Leonida](https://img.shields.io/badge/GTA%206-Leonida-d45485?labelColor=292042)
 

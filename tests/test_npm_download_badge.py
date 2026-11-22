@@ -2,10 +2,27 @@ from datetime import date
 import unittest
 from urllib.error import HTTPError
 
-from tools.npm_download_badge import LAUNCH, lifetime_downloads
+from tools.npm_download_badge import LAUNCH, download_reports, lifetime_downloads, svg_badge
 
 
 class LifetimeDownloadsTest(unittest.TestCase):
+    def test_week_and_lifetime_use_the_same_reporting_day(self):
+        rows = {
+            "last-day": {"end": "2026-12-03"},
+            "2026-11-21:2026-12-03": {"start": "2026-11-21", "end": "2026-12-03", "downloads": 800},
+            "2026-11-27:2026-12-03": {"start": "2026-11-27", "end": "2026-12-03", "downloads": 127},
+        }
+        report = download_reports(date(2026, 12, 5), rows.__getitem__)
+        self.assertEqual(report, (date(2026, 12, 3), 127, 800))
+        self.assertIn("127 in seven days, 800 since launch", svg_badge(*report))
+
+    def test_first_report_counts_launch_downloads_once(self):
+        rows = {
+            "last-day": {"end": str(LAUNCH)},
+            f"{LAUNCH}:{LAUNCH}": {"start": str(LAUNCH), "end": str(LAUNCH), "downloads": 301},
+        }
+        self.assertEqual(download_reports(date(2026, 11, 22), rows.__getitem__), (LAUNCH, 301, 301))
+
     def test_launch_day_has_no_completed_reporting_day(self):
         self.assertIsNone(lifetime_downloads(LAUNCH, lambda period: self.fail(period)))
 
