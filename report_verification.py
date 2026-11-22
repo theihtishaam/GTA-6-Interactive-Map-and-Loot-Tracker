@@ -13,7 +13,7 @@ GRID_DISAGREEMENT = 250
 MAX_SOURCES = 8
 
 KNOWN_CATEGORIES = frozenset({
-    "mission", "heist", "bounty", "reward", "earbuds", "gloves", "bag", "collectible", "landmark",
+    "mission", "heist", "bounty", "reward", "earbuds", "gloves", "bag", "collectible", "leisure", "landmark",
 })
 # Remove generic words so two headlines that only say "new GTA 6 bounty"
 # cannot support the same claim merely by sharing a venue or neighborhood.

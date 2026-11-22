@@ -14,6 +14,8 @@ assert.match(card,/Inspect &lt;door&gt;/);
 assert.match(card,/265 167"/);
 assert.doesNotMatch(card,/Private start|javascript:alert|<draft>/);
 assert.match(fieldPack([row],data,"data:image/webp;base64,QUJD",true,"today"),/Private start/);
+const pool = {...row, id:"leisure-pool", category:"leisure", subcategory:"Pool"};
+assert.match(fieldPack([pool],data,"data:image/webp;base64,QUJD",false,"today"),/Pool · Vice City/);
 assert.throws(()=>fieldPack([row],data,"https://example.com/image",false,"today"));
 console.log("Field card scopes, local map, private route exclusion and escaped output passed.");
 

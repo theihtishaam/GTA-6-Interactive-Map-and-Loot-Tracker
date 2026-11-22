@@ -1,5 +1,6 @@
 import { $, esc, link, fmt, located, evidence, categories, toast } from "./ui.mjs";
 import { download, exportCsv } from "./journal.mjs";
+import { activityType } from "./activity-types.mjs";
 const repo = "https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker";
 const choices = [
   ["filtered","Current map filters"], ["activities","All activities"], ["bounty","Bounties"],
@@ -22,7 +23,7 @@ function grid(r, meta) {
   return Math.round(f.minX + r.x * (f.maxX - f.minX)) + ", " + Math.round(f.maxY - r.y * (f.maxY - f.minY));
 }
 function record(r, done, meta) {
-  return {...r, status:done.has(r.id) ? "completed" : "remaining", evidence:evidence(r), gameGrid:grid(r, meta) || null};
+  return {...r, activityType:activityType(r), status:done.has(r.id) ? "completed" : "remaining", evidence:evidence(r), gameGrid:grid(r, meta) || null};
 }
 function fieldMap(rows, image, data, includeRoute) {
   const {meta,track,route} = data;
@@ -59,7 +60,7 @@ export function fieldPack(rows, data, image, includeRoute, exportedAt) {
     const status = data.done.has(r.id) ? "Completed" : "Remaining";
     const coords = grid(r,meta);
     return '<article><h3>' + (i+1) + '. ' + esc(r.title) + '</h3><small>' +
-      [status,categories[r.category]?.[1] || r.category,r.region,evidence(r),coords ? "Grid "+coords : "Position pending or separate map frame"].filter(Boolean).map(esc).join(' · ') +
+      [status,categories[r.category]?.[1] || r.category,activityType(r),r.region,evidence(r),coords ? "Grid "+coords : "Position pending or separate map frame"].filter(Boolean).map(esc).join(' · ') +
       '</small><p>' + esc(r.details) + '</p>' + (r.verification ? '<p><strong>' + esc(r.verification.label) + '</strong> · ' + esc(r.verification.reason) + '</p>' : '') +
       (r.steps?.length ? '<ol>' + r.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol>' : '') +
       '<p>' + sources.map((u,i)=>link(u,i ? "Supporting source "+i : "Original source")).join(" · ") + '</p></article>';

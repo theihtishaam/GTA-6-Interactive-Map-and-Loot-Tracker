@@ -15,6 +15,7 @@ const paths = {
   bounty:
     '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>',
   reward: '<path d="m3 8 4-4h10l4 4-9 12zM3 8h18M8 8l4 12 4-12"/>',
+  leisure: '<circle cx="12" cy="12" r="8.8"/><circle cx="12" cy="12" r="4.7"/><path d="M10.6 11c0-1.6 2.8-1.6 2.8 0 0 .9-2.8 1.1-2.8 2.2 0 1.7 2.8 1.7 2.8 0 0-1.1-2.8-1.3-2.8-2.2z"/>',
   collectible:
     '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/>',
   earbuds:
@@ -48,6 +49,7 @@ export const categories = {
   heist: ["Heists", "Heist", "#ffad79"],
   bounty: ["Bounties", "Bounty", "#ff8798"],
   reward: ["Rewards", "Reward", "#f4cf72"],
+  leisure: ["Sports & games", "Leisure activity", "#7cdeb3"],
   collectible: ["Collectibles", "Collectible", "#c6a2ff"],
   earbuds: ["Earbuds", "Earbuds", "#81cfff"],
   gloves: ["Gloves", "Gloves", "#9ccab3"],

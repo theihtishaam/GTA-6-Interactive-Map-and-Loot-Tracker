@@ -1,6 +1,6 @@
 # Player guide coverage
 
-Reviewed November 21, 2026. The bundled guides combine gameplay walkthroughs, in-game map screenshots and community venue positions. A job or shop marker shows the location selected in the game's map index. A mission marker takes you to the activity's starting point or contact. A venue pin takes you to a building or place. Check the guide for the room, prerequisite or objective that awards the item.
+Updated November 22, 2026. The bundled guides combine gameplay walkthroughs, in-game map screenshots and community venue positions. A job or shop marker shows the location selected in the game's map index. A mission marker takes you to the activity's starting point or contact. A venue pin takes you to a building or place. Check the guide for the room, prerequisite or objective that awards the item.
 
 | Category | Entries | Job or shop marker | Mission or contact | Venue or landmark | What a player can track |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -9,10 +9,11 @@ Reviewed November 21, 2026. The bundled guides combine gameplay walkthroughs, in
 | Bags | 1 | 0 | 1 | 0 | The Chapter 1 story unlock for the duffel bag |
 | Collectibles | 12 | 0 | 1 | 11 | Cards, magazines, a watch, a sculpture scan and a summit meditation |
 | Rewards | 8 | 0 | 2 | 6 | Treasure diving, a trophy, race medals and edition-specific rewards |
+| Sports & games | 8 | 0 | 0 | 8 | Pool opponents, golf, fitness and a Chapter 1 home console. [Venue evidence](NEW-GUIDES.md) |
 | Bounties | 0 | 0 | 0 | 0 | Awaiting a named GTA VI activity with evidence |
 | Gloves | 0 | 0 | 0 | 0 | Awaiting a documented GTA VI equipment unlock or shop purchase |
 
-All 67 guides have a map position, covering 63 distinct coordinates. The seven payday jobs and 22 bank jobs each have a separate marker and progress entry. Some Ocean Beach banks share their brand and district. Use the source marker, branch type and reported take to tell them apart. [Bank jobs](https://www.powerpyx.com/gta-6-all-bank-jobs-locations-bank-vaults/) · [Bank types and payouts](https://games.gg/grand-theft-auto-vi/guides/all-bank-locations-gta-6/) · [Payday jobs](https://www.powerpyx.com/gta-6-all-payday-loans-jobs-locations/)
+The 75 guides in the base catalogue cover 67 distinct coordinates. With the meditation set, the atlas has 84 activity guides at 75 distinct coordinates. The seven payday jobs and 22 bank jobs each have a separate marker and progress entry. Some Ocean Beach banks share their brand and district. Use the source marker, branch type and reported take to tell them apart. [Bank jobs](https://www.powerpyx.com/gta-6-all-bank-jobs-locations-bank-vaults/) · [Bank types and payouts](https://games.gg/grand-theft-auto-vi/guides/all-bank-locations-gta-6/) · [Payday jobs](https://www.powerpyx.com/gta-6-all-payday-loans-jobs-locations/)
 
 ## How the evidence was used
 

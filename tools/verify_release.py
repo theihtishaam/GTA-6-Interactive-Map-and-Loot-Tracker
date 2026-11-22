@@ -27,14 +27,15 @@ with LocalServer(atlas, 0) as server:
         origin = 'http://127.0.0.1:' + str(server.server_port)
         opener = build_opener(ProxyHandler({}))
         def get(path): return json.load(opener.open(origin+path, timeout=8))
-        files = ['/','/map.webp','/roads.json','/app.mjs','/field-manual.mjs','/export-center.mjs','/settings.mjs','/map-upgrade.css','/source-view.mjs','/missions.mjs','/missions.css','/goals.mjs','/goals.css','/mission-positions.json']
+        files = ['/','/map.webp','/roads.json','/app.mjs','/activity-types.mjs','/field-manual.mjs','/export-center.mjs','/settings.mjs','/map-upgrade.css','/source-view.mjs','/missions.mjs','/missions.css','/goals.mjs','/goals.css','/mission-positions.json']
         if '--maps' in sys.argv: files += ['/official-map.jpg','/game-map.png']
         for path in files:
             assert opener.open(Request(origin+path,method='HEAD'),timeout=8).status == 200,path
         rows = {r['id']:r for r in get('/guides.json')}
         for id_, values in get('/guide-positions.json').items(): rows[id_].update(values)
         for r in get('/collectible-guides.json'): rows[r['id']] = r
-        assert len(rows) == 76 and all(0 <= r['x'] <= 1 and 0 <= r['y'] <= 1 for r in rows.values())
+        assert len(rows) == 84 and all(0 <= r['x'] <= 1 and 0 <= r['y'] <= 1 for r in rows.values())
+        assert {r.get('subcategory') for r in rows.values() if r['category']=='leisure'} == {'Pool','Golf','Fitness','Arcade'}
         assert len(get('/landmarks.json')) == 3663
         missions = get('/missions.json')
         ids = {m['id'] for m in missions}
@@ -42,7 +43,7 @@ with LocalServer(atlas, 0) as server:
         assert set(get('/mission-positions.json')) <= ids
         assert get('/api/state')['version'] == Path('VERSION').read_text().strip()
         assert get('/api/bounty/state')['interval'] == 24
-        print(f"Clean archive served 76 positioned activity guides, {len(missions)} mission builds, 3,663 landmarks and all selected map layers.")
+        print(f"Clean archive served {len(rows)} positioned activity guides, {len(missions)} mission builds, 3,663 landmarks and all selected map layers.")
     finally:
         server.shutdown()
         worker.join()

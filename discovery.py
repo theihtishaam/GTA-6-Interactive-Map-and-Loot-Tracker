@@ -17,7 +17,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 from xml.etree import ElementTree
 
-USER_AGENT = "GTA6MapLoot/0.1.4 (https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker)"
+USER_AGENT = "GTA6MapLoot/0.1.5 (https://github.com/theihtishaam/GTA-6-Interactive-Map-and-Loot-Tracker)"
 LAUNCH = datetime(2026, 11, 19, tzinfo=timezone.utc)
 REVIEW_EMBARGO = LAUNCH.replace(day=18)
 LIMIT = 35
@@ -27,7 +27,7 @@ NOISE = re.compile(
     r"\b(?:rumou?r\w*|wish\s*list|speculat\w*|fan concept|leak\w*|release date|how to download|"
     r"pc port|cracks?|giveaways?|spoiler policy|patch notes|pre[ -]?order|pre[ -]?load|"
     r"cheats?|datamin\w*|deal(?:s)?|collector['’]s (?:box|edition)|discount(?:s)?|"
-    r"release times?|review bombing|game awards|bug bount(?:y|ies))\b",
+    r"release times?|review bombing|game awards|bug bount(?:y|ies)|infinite money glitch)\b",
     re.I,
 )
 CATEGORIES = [
@@ -37,17 +37,23 @@ CATEGORIES = [
     ("bounty", r"bount(?:y|ies)|wanted posters?|bail (?:bonds?|enforcement|office)|most wanted targets?"),
     ("heist", r"heists?|robbery|robberies|bank (?:jobs?|vaults?)|armou?red (?:trucks?|vans?)|"
               r"smash\s*['’]?n['’]?\s*grabs?|jewel(?:l)?ery jobs?"),
+    ("leisure", r"pool (?:opponents?|tables?|minigames?|challenges?)|billiards|"
+                r"gym locations?|fitness cent(?:er|re)s? locations?|"
+                r"how to play (?:pool|golf)|golf (?:courses?|holes?|challenges?|minigames?|clubs? locations?)|"
+                r"arcade (?:game|machine) locations?|arcade and video games|tenebrae lux|"
+                r"bang for your buck|time jackers rewind|street trash iii"),
     ("collectible", r"collect[ia]bles?|easter eggs?|hidden packages?|flusher tags?|"
                     r"collectible cards?|secret playlists?|treasure (?:dives?|shipwrecks?)|waink scans?"),
     ("reward", r"rewards?|loot|unlocks?|secret (?:cash )?stash(?:es)?|hidden (?:cash|money)|"
-               r"all equipment|style rewards?|open the safe|free (?:early-game )?weapons?"),
+               r"all equipment|style rewards?|open the safe|safe code|secret gear spot|"
+               r"free (?:early-game )?weapons?|where to find a rocket launcher"),
     ("landmark", r"points? of interest|landmarks?"),
 ]
 CATEGORIES = [(name, re.compile(r"\b(?:" + words + r")\b", re.I)) for name, words in CATEGORIES]
 ACTION = re.compile(
     r"\b(?:found|discover\w*|unlock\w*|rewards?|loot|locations?|pick ?up|collect\w*|"
     r"get|drops?|guide|obtain\w*|complete\w*|pay\w*|hidden|claim\w*|map|"
-    r"buy|bought|purchas\w*|scan\w*|available)\b",
+    r"buy|bought|purchas\w*|scan\w*|available|opponents?|play(?:able)?|beat|finish|solve|solutions?)\b",
     re.I,
 )
 LOCATION_ACTION = re.compile(
@@ -63,7 +69,7 @@ MISSION_BODY = re.compile(
     re.I,
 )
 MISSION_TASK = re.compile(
-    r"\b(?:bring|choose|collect|complete|escape|find|finish|follow|get|head|help|"
+    r"\b(?:bring|choose|collect|complete|drive|escape|find|finish|follow|get|head|help|"
     r"look for|meet|pick up|reach|return|start|take|visit|walk|wait)\b",
     re.I,
 )
@@ -138,6 +144,7 @@ class Source:
     launch_guides: bool = False
     feed_urls: tuple[str, ...] = ()
     coverage: str = ""
+    own_articles: bool = False
 
     def health(self):
         return {
@@ -180,6 +187,13 @@ SOURCES = (
            launch_guides=True, coverage="GTA 6 tag feed screened for activities, unlocks and collectible guides."),
     Source("collectibles-map", "GTA6 Collectibles Map articles", "https://gta6collectiblesmap.com/feed.xml",
            game_specific=True, coverage="Specialist collectible and reward articles. Broad and derivative coverage stays a lead."),
+    Source("insider-gaming", "Insider Gaming GTA 6 loot guides",
+           "https://insider-gaming.com/?s=GTA+6+loot&feed=rss2",
+           coverage="Targeted publisher search feed for GTA VI loot and named reward guides.",
+           own_articles=True),
+    Source("vi-field-guide", "The VI Field Guide", "https://vifieldguide.com/feed.xml",
+           coverage="Independent fan guide covering individual walkthroughs and gameplay activities.",
+           own_articles=True),
 )
 
 
@@ -355,6 +369,10 @@ def individual_mission(source, title, excerpt, url):
     # This publisher puts the mission format in the canonical article slug
     # while supplying a short, objective-focused description in its feed.
     parsed = urlsplit(url)
+    if source.id == "vi-field-guide" and parsed.hostname == "vifieldguide.com":
+        return bool(re.fullmatch(r"/walkthrough/[a-z0-9-]+/?", parsed.path)
+                    and re.search(r"\bGTA\s*(?:6|VI)\s+mission\s+\d+\b", title, re.I)
+                    and MISSION_TASK.search(excerpt))
     return (source.id == "gtaboom" and parsed.hostname == "www.gtaboom.com"
             and bool(re.fullmatch(r"/gta-6-[a-z0-9-]+-walkthrough-[a-f0-9]{4}/?", parsed.path))
             and bool(MISSION_TASK.search(excerpt)))
@@ -395,18 +413,26 @@ def make_report(source, item, landmarks):
     combined = f"{title} {excerpt}"
     if not (url and title and published and published <= datetime.now(timezone.utc)):
         return None
+    if getattr(source, "own_articles", False) and (
+        urlsplit(url).hostname.removeprefix("www.") != urlsplit(source.url).hostname.removeprefix("www.")
+    ):
+        return None
     # The November 18 exception applies only to firsthand guide publishers and their own articles.
     first_day = REVIEW_EMBARGO if source.launch_guides and urlsplit(url).hostname == urlsplit(source.url).hostname else LAUNCH
+    game_scope = title if source.kind == "feed" else combined
     if (published < first_day
             or NOISE.search(title) or OLDER_GAME.search(title)
             or re.search(r"\b(?:could|might|will)\b.*\?", title, re.I)
-            or not (source.game_specific or GAME.search(combined))):
+            or re.match(r"^(?:guide:\s*)?(?:can you|does (?:GTA\s*(?:6|VI)|it)|is it)\b.*\?", title, re.I)
+            or not (source.game_specific or GAME.search(game_scope))):
         return None
     # Generic mission indexes stay on the publisher's site rather than becoming individual activities.
     if MISSION_ROUNDUP.search(title):
         return None
     mission = individual_mission(source, title, excerpt, url)
     category = "mission" if mission else next((name for name, pattern in CATEGORIES if pattern.search(title)), None)
+    if category == "leisure" and re.search(r"\b(?:swimming|money|prize|betting) pools?\b", title, re.I):
+        return None
     if not category or (not mission and not ACTION.search(combined)):
         return None
     # Multi-location guides stay searchable as leads instead of representing the guide with one arbitrary pin.

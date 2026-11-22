@@ -37,6 +37,8 @@ class ResourceTests(unittest.TestCase):
             ("GTA 6 Collectible Locations", FRESH, B, "Guides Example"),
             ("GTA 6 Hidden Rewards Locations", FRESH, "https://www.gamesradar.com", "Existing Source"),
             ("GTA 6 Story Mission Walkthrough", FRESH, "https://www.gtaboom.com", "Existing Fixed Guide"),
+            ("GTA 6 Story Mission Walkthrough", FRESH, "https://vifieldguide.com", "Existing Fixed Fan Guide"),
+            ("GTA 6 Collectible Locations", FRESH, "https://insider-gaming.com", "Existing Fixed Loot Guide"),
             ("GTA 6 Rumored Collectibles", FRESH, "https://rumor.example", "Rumor"),
             ("GTA 6 Earbuds Locations", FRESH, "https://127.0.0.1/", "Invalid"),
         ])
@@ -85,7 +87,8 @@ class ResourceTests(unittest.TestCase):
         ])
         self.assertTrue(all(row.get("sourceId") and row.get("discoveredVia") for row in reports))
         self.assertFalse(any(site in url for url in calls
-                             for site in ("gamesradar", "gtaboom", "rumor.example", "127.0.0.1", "comments/feed")))
+                             for site in ("gamesradar", "gtaboom", "vifieldguide", "insider-gaming",
+                                          "rumor.example", "127.0.0.1", "comments/feed")))
         self.assertEqual(sum(url.startswith("https://news.google.com") for url in calls), 3)
 
     def test_retains_qualified_feeds_during_search_outage(self):

@@ -1,4 +1,5 @@
 import { AtlasMap } from "./map.mjs";
+import { activityType } from "./activity-types.mjs";
 import {
   $,
   categories,
@@ -62,6 +63,7 @@ let state = { reports: [], sources: [], interval: 24, provider: {} },
   view = "map",
   category = "activities",
   type = "",
+  activityFacet = "",
   limit = 25,
   journalTab = "remaining",
   journalLimit = 60,
@@ -144,27 +146,69 @@ function updateState(s) {
   if (view === "goals") goalsView();
   if (view === "missions") missionsView();
 }
+function inLayer(row) {
+  return category === "all" || (category === "activities" ? row.category !== "landmark" : category === row.category);
+}
+function facetValue(row) {
+  return row.category + ":" + (activityType(row) || "Other");
+}
+function drawActivityTypes(candidates) {
+  const field = $("activity-type-field");
+  const select = $("activity-type");
+  const groups = new Map();
+  const matchingCounts = new Map();
+  for (const row of candidates) {
+    const key = facetValue(row);
+    matchingCounts.set(key, (matchingCounts.get(key) || 0) + 1);
+  }
+  for (const row of catalog) {
+    if (row.category === "landmark" || !inLayer(row)) continue;
+    if (!groups.has(row.category)) groups.set(row.category, new Map());
+    const label = activityType(row) || "Other " + (categories[row.category]?.[0] || "activities").toLowerCase();
+    groups.get(row.category).set(facetValue(row), label);
+  }
+  const all = new Option("All activity types", "");
+  const options = [all];
+  for (const [kind, [name]] of Object.entries(categories)) {
+    if (!groups.has(kind)) continue;
+    const group = document.createElement("optgroup");
+    group.label = name;
+    for (const [key, label] of [...groups.get(kind)].sort((a,b) => a[1].localeCompare(b[1]))) {
+      const count = matchingCounts.get(key) || 0;
+      const option = new Option(label + " (" + fmt(count) + ")", key);
+      option.disabled = !count && activityFacet !== key;
+      group.append(option);
+    }
+    options.push(group);
+  }
+  select.replaceChildren(...options);
+  select.value = activityFacet;
+  if (select.selectedIndex < 0) {
+    activityFacet = "";
+    select.value = "";
+  }
+  field.hidden = options.length === 1;
+}
 function applyFilters() {
   const query = $("search").value.trim().toLowerCase(),
     words = query.split(/\s+/).filter(Boolean),
     region = $("region-filter").value,
     proof = $("evidence-filter").value,
     prog = $("progress-filter").value;
-  filtered = catalog.filter(
+  const candidates = catalog.filter(
     (r) =>
-      (category === "all" ||
-        (category === "activities" && r.category !== "landmark") ||
-        category === r.category) &&
-      (!type || r.type === type) &&
       (!region || r.region === region) &&
       (!proof || (proof === "mapped" ? located(r) : proof === "pending" ? !located(r) : r.confidence === proof || r.verification?.status === proof)) &&
       (prog === "all" || (prog === "done") === r.done) &&
       (!words.length || words.every(word =>
-        [r.title, ...(r.aliases || []), r.region, r.type, r.category, categories[r.category]?.[0], r.id, r.details]
+        [r.title, ...(r.aliases || []), r.region, r.type, r.category, categories[r.category]?.[0], activityType(r), r.id, r.details]
           .join(" ")
           .toLowerCase()
           .includes(word))),
   );
+  drawActivityTypes(candidates);
+  filtered = candidates.filter(r => inLayer(r) && (!type || r.type === type) &&
+    (!activityFacet || facetValue(r) === activityFacet));
   if (words.length) {
     function relevance(r) {
       const title = r.title.toLowerCase();
@@ -183,7 +227,9 @@ function applyFilters() {
   }
   if (selected && !filtered.some((r) => r.id === selected.id)) unselect();
   const counts = {};
-  catalog.forEach((r) => (counts[r.category] = (counts[r.category] || 0) + 1));
+  candidates.forEach((r) => (counts[r.category] = (counts[r.category] || 0) + 1));
+  const focusedLayer = document.activeElement?.dataset.cat;
+  const focusedPlaceType = document.activeElement?.id === "place-type";
   $("categories").innerHTML =
     '<div class="layer-scope"><button data-cat="all" aria-pressed="' +
     (category === "all") +
@@ -230,9 +276,11 @@ function applyFilters() {
       limit = 25;
       applyFilters();
     };
+  if (focusedLayer) $("categories").querySelector('[data-cat="' + focusedLayer + '"]')?.focus({preventScroll:true});
+  if (focusedPlaceType) $("place-type")?.focus({preventScroll:true});
   $("map-stage").classList.toggle(
     "filtered",
-    !["activities", "all"].includes(category) || !!query || !!region || !!proof || prog !== "all",
+    !["activities", "all"].includes(category) || !!activityFacet || !!query || !!region || !!proof || prog !== "all",
   );
   map.entries = filtered;
   map.selected = selected;
@@ -248,7 +296,7 @@ function applyFilters() {
   $("results").innerHTML =
     filtered.slice(0, limit).map(rowButton).join("") ||
     '<div class="empty"><strong>No matching entries</strong>' +
-      (Object.hasOwn(categories, category) && !counts[category]
+      (Object.hasOwn(categories, category) && !catalog.some(r => r.category === category)
         ? "No sourced " +
           esc(categories[category]?.[0]?.toLowerCase() || "") +
           " entries yet. New reports appear here after refresh."
@@ -283,6 +331,7 @@ function rowButton(r) {
 function resetFilters() {
   category = "all";
   type = "";
+  activityFacet = "";
   limit = 25;
   $("search").value = "";
   $("progress-filter").value = "all";
@@ -295,6 +344,12 @@ $("categories").onclick = (e) => {
   if (!b) return;
   category = b.dataset.cat;
   type = "";
+  activityFacet = "";
+  limit = 25;
+  applyFilters();
+};
+$("activity-type").onchange = e => {
+  activityFacet = e.target.value;
   limit = 25;
   applyFilters();
 };

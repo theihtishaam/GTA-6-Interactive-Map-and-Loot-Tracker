@@ -1,4 +1,10 @@
-# Verification — November 21, 2026
+# Release verification
+
+## Version 0.1.5 — November 22, 2026
+
+The extracted ZIP served 84 activity guides, 176 mission entries and 3,663 landmarks. The activity guides occupy 75 distinct coordinates. Of 2,775 pairs of guide locations, the bundled road graph connects 2,278. The remaining pairs use a direct bearing. [Eight new venue guides](NEW-GUIDES.md)
+
+Desktop and mobile walkthroughs exercised the activity type filter, map pins, search, checklist, exports and first-launch welcome. Isolated Windows npm installs exercised start, occupied-port handling, stop and retention of player settings after reinstall. The main Python suite passed 92 tests, with five additional guide checks and 17 Node tests.
 
 ## Version 0.1.1
 

@@ -1,4 +1,5 @@
 import { categories, located, safeRead, save } from "./ui.mjs";
+import { activityType } from "./activity-types.mjs";
 export const blank = () => ({ version: 1, done: [], pins: [], routes: {}, builds: {} });
 const idOK = (v) => typeof v === "string" && /^[A-Za-z0-9_.-]{1,128}$/.test(v);
 const point = (v) =>
@@ -109,6 +110,7 @@ export function exportCsv(rows, done) {
     "Published at",
     "Report verification",
     "Verification sources",
+    "Activity type",
   ];
   function safeCell(val) {
     const raw = String(val ?? "");
@@ -145,6 +147,7 @@ export function exportCsv(rows, done) {
     r.publishedAt,
     r.verification?.label,
     (r.verification?.sources || []).map(s => s.url).join(" | "),
+    activityType(r),
   ]);
   download(
     "leonida-loot-export.csv",

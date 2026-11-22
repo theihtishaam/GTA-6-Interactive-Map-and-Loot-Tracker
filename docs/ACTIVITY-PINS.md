@@ -1,6 +1,6 @@
 # Activity pins and source evidence
 
-The atlas can place all 67 curated game guides. The source-backed overlay contributes 50 positions. The remaining 17 use named community landmarks already linked in the guides.
+The atlas can place all 75 base guides. The source-backed overlay contributes 50 positions. The other 25 use named community landmarks, including eight [sports and games guides](NEW-GUIDES.md).
 
 | Overlay precision | Guides | What the marker locates |
 | --- | ---: | --- |

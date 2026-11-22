@@ -26,6 +26,36 @@ EXCERPT = "Open the lockers behind the sign to find the gloves."
 
 
 class DiscoveryTests(unittest.TestCase):
+    def test_sports_filter_matches_gameplay_only(self):
+        source = next(row for row in SOURCES if row.id == "vi-field-guide")
+        for title in ("GTA 6 Pool Opponents Locations", "GTA 6 Golf Courses Guide",
+                      "GTA 6 All Gym Locations", "GTA VI Fitness Centre Locations",
+                      "Tenebrae Lux puzzle solutions in GTA VI"):
+            with self.subTest(title=title):
+                row = make_report(source, (
+                    title, "Find the activities at Synthetic Harbor and play for the reward.",
+                    "https://vifieldguide.com/guides/demo/", PUBLISHED, None,
+                ), [LANDMARK])
+                self.assertEqual(row["category"], "leisure")
+        for title in ("GTA 6 Swimming Pool Locations", "GTA 6 Prize Pool Challenges",
+                      "GTA 6 Money Pool Update", "How to unlock pool tables in another game"):
+            with self.subTest(title=title):
+                self.assertIsNone(make_report(source, (
+                    title, "Find the activities at Synthetic Harbor. A related link mentions GTA VI.",
+                    "https://vifieldguide.com/guides/demo/", PUBLISHED, None,
+                ), [LANDMARK]))
+
+    def test_fan_mission_feed_uses_individual_walkthrough_metadata(self):
+        source = next(row for row in SOURCES if row.id == "vi-field-guide")
+        item = ("Night Shift Walkthrough: GTA 6 Mission 12",
+                "Drive the quest giver from the docks and return to the store for the next objective.",
+                "https://vifieldguide.com/walkthrough/night-shift/", PUBLISHED, None)
+        row = make_report(source, item, [])
+        self.assertEqual((row["category"], row["missionName"], row["confidence"]),
+                         ("mission", "Night Shift", "lead"))
+        self.assertIsNone(row["x"])
+        self.assertIsNone(make_report(source, (*item[:2], "https://outside.example/guide/", *item[3:]), []))
+
     def test_public_game_grid_becomes_reported_pin(self):
         def locate(body):
             return make_report(SOURCES[0],("GTA VI collectible found",body,PUBLIC_LINK,PUBLISHED,None),[])

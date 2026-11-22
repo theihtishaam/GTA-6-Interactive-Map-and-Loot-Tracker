@@ -1294,6 +1294,30 @@ dialog::backdrop {
   font-size: 12px;
   padding: 6px;
 }
+#activity-type-field {
+  margin: 12px 0 4px;
+}
+#activity-type-field[hidden] { display: none; }
+#activity-type {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+}
+@media (min-width: 651px) {
+  #map-stage:has(#inspector:not([hidden])) .map-tools {
+    top: 154px;
+    right: auto;
+    left: 20px;
+    z-index: 6;
+  }
+  #map-stage:has(#inspector:not([hidden])) .map-key-panel {
+    top: 154px;
+    right: auto;
+    left: 71px;
+    max-width: calc(100% - 85px);
+    max-height: calc(100% - 170px);
+  }
+}
 .map-stage.filtered .pin:not(.selected) {
   box-shadow:
     0 0 0 3px color-mix(in srgb, var(--cat) 36%, transparent),
