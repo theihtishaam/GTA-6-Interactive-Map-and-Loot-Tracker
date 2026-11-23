@@ -41,6 +41,19 @@ class BallotTests(unittest.TestCase):
                         handle_write(folder, {"id": "guide-one", "player": player, "vote": 1})
             self.assertEqual(handle_read(folder, "guide-one")["up"], 1)
 
+    def test_shared_origin_rejects_invalid_ports(self):
+        with tempfile.TemporaryDirectory() as folder:
+            config = Path(folder) / "community.json"
+            for port in ("443", "8766", "65535"):
+                origin = f"https://votes.example.org:{port}"
+                config.write_text(json.dumps({"origin": origin}))
+                with self.subTest(origin=origin):
+                    self.assertEqual(shared_origin(folder), origin)
+            for port in ("0", "00000", "65536", "99999", "not-a-port"):
+                config.write_text(json.dumps({"origin": f"https://votes.example.org:{port}"}))
+                with self.subTest(port=port):
+                    self.assertEqual(shared_origin(folder), "")
+
     def test_shared_service_and_origin(self):
         with tempfile.TemporaryDirectory() as folder:
             config = Path(folder) / "community.json"
