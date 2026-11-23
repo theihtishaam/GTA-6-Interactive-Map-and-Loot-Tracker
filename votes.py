@@ -18,6 +18,9 @@ def shared_origin(public_dir):
             return ""
         if url.path not in ("", "/") or not re.fullmatch(r"[A-Za-z0-9.-]+(:[0-9]{1,5})?", url.netloc):
             return ""
+        # Accessing .port rejects values above 65535; port zero is unusable.
+        if url.port == 0:
+            return ""
         return "https://" + url.netloc
     except (OSError, ValueError, TypeError, AttributeError):
         return ""
