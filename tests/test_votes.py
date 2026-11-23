@@ -25,6 +25,22 @@ class BallotTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 cast(a, True)
 
+    def test_reject_malformed_player_identifiers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            valid = str(uuid.uuid4())
+            self.assertEqual(
+                handle_write(folder, {"id": "guide-one", "player": valid, "vote": 1})["up"], 1
+            )
+            # Both malformed examples passed the old 36-character regex.
+            malformed = ("-" * 36, "a" * 36, uuid.uuid4().hex, "not-a-uuid")
+            for player in malformed:
+                with self.subTest(player=player):
+                    with self.assertRaises(ValueError):
+                        handle_read(folder, "guide-one", player)
+                    with self.assertRaises(ValueError):
+                        handle_write(folder, {"id": "guide-one", "player": player, "vote": 1})
+            self.assertEqual(handle_read(folder, "guide-one")["up"], 1)
+
     def test_shared_service_and_origin(self):
         with tempfile.TemporaryDirectory() as folder:
             config = Path(folder) / "community.json"
