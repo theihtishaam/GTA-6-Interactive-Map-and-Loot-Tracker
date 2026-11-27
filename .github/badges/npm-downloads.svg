@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="310" height="28" role="img" aria-label="npm downloads through 2026-11-25: 688 in seven days, 688 since launch">
-  <title>npm downloads through 2026-11-25: 688 in seven days, 688 since launch</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="310" height="28" role="img" aria-label="npm downloads through 2026-11-26: 692 in seven days, 692 since launch">
+  <title>npm downloads through 2026-11-26: 692 in seven days, 692 since launch</title>
   <rect width="310" height="28" rx="5" fill="#193632"/>
   <path d="M46 0h108v28H46z" fill="#315852"/>
   <g font-family="Verdana,Arial,sans-serif" font-size="12" text-anchor="middle" fill="#fff">
     <text x="23" y="18" font-weight="bold">npm</text>
-    <text x="100.0" y="18">7 days  688</text>
-    <text x="232.0" y="18" fill="#bcf6d5">since launch  688</text>
+    <text x="100.0" y="18">7 days  692</text>
+    <text x="232.0" y="18" fill="#bcf6d5">since launch  692</text>
   </g>
 </svg>
